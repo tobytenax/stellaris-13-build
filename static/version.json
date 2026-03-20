@@ -1,0 +1,7 @@
+{
+  "version": "2.7.3",
+  "release_date": "2026-03-15",
+  "release_notes": "Blueprint v2 engine with 10-chapter celestial reports, expanded fixed star catalog, and Arabic Parts computation.",
+  "changelog_url": null,
+  "min_supported": "2.4.0"
+}

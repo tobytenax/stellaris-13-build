@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }} — Stellaris-13</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #0a0a0f;
+  --deep: #0f0f1a;
+  --nebula: #141425;
+  --dust: #1a1a30;
+  --star-dim: #3a3a5c;
+  --star-mid: #7a7aaa;
+  --star-bright: #c8c8e8;
+  --star-white: #eeeef8;
+  --gold: #d4a847;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--void);
+  color: var(--star-bright);
+  font-family: var(--font-body);
+  font-weight: 300;
+  min-height: 100vh;
+  line-height: 1.8;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.back-link {
+  display: inline-block;
+  color: var(--star-dim);
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin-bottom: 2rem;
+  transition: color 0.3s;
+}
+
+.back-link:hover {
+  color: var(--gold);
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 300;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--dust);
+  padding-bottom: 1rem;
+}
+
+.legal-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.legal-nav a {
+  color: var(--star-dim);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--dust);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.legal-nav a:hover, .legal-nav a.active {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.content {
+  background: linear-gradient(135deg, var(--deep), var(--nebula));
+  border: 1px solid var(--dust);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.content h1, .content h2, .content h3 {
+  color: var(--gold);
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.content h1:first-child, .content h2:first-child {
+  margin-top: 0;
+}
+
+.content h2 {
+  font-size: 1.4rem;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.content h3 {
+  font-size: 1.1rem;
+  color: var(--star-white);
+}
+
+.content p {
+  margin-bottom: 1rem;
+}
+
+.content ul, .content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--star-mid);
+}
+
+.content li {
+  margin-bottom: 0.5rem;
+}
+
+.content strong {
+  color: var(--star-white);
+}
+
+.content a {
+  color: var(--gold);
+}
+
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.content th, .content td {
+  padding: 0.75rem;
+  border: 1px solid var(--dust);
+  text-align: left;
+}
+
+.content th {
+  background: var(--void);
+  color: var(--gold);
+}
+
+.last-updated {
+  font-size: 0.85rem;
+  color: var(--star-dim);
+  margin-bottom: 2rem;
+}
+
+.footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--star-dim);
+  font-size: 0.85rem;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/" class="back-link">← Back to Stellaris-13</a>
+  
+  <h1>{{ title }}</h1>
+  
+  <div class="legal-nav">
+    <a href="/legal/terms" {% if 'Terms' in title %}class="active"{% endif %}>Terms of Service</a>
+    <a href="/legal/privacy" {% if 'Privacy' in title %}class="active"{% endif %}>Privacy Policy</a>
+    <a href="/legal/disclaimer" {% if 'Disclaimer' in title %}class="active"{% endif %}>Disclaimer</a>
+  </div>
+  
+  <p class="last-updated">Last Updated: February 2026</p>
+  
+  <div class="content">
+    {{ content | safe }}
+  </div>
+  
+  <div class="footer">
+    Stellaris-13 · 13-Sign Astronomical Ephemeris<br>
+    For questions, contact: legal@stellaris13.app
+  </div>
+</div>
+
+</body>
+</html>

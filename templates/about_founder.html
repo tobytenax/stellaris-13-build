@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>About the Founder — Stellaris-13</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #0a0a0f;
+  --deep: #0f0f1a;
+  --nebula: #141425;
+  --dust: #1a1a30;
+  --star-dim: #3a3a5c;
+  --star-mid: #7a7aaa;
+  --star-bright: #c8c8e8;
+  --star-white: #eeeef8;
+  --gold: #d4a847;
+  --gold-dim: #8a7030;
+  --ophiuchus: #9b59b6;
+  --ophiuchus-dim: #6a3a80;
+  --iau-blue: #4aa8d8;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--void);
+  color: var(--star-bright);
+  font-family: var(--font-body);
+  font-weight: 300;
+  min-height: 100vh;
+  line-height: 1.8;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 85% 45%, rgba(212,168,71,0.6), transparent),
+    radial-gradient(1.5px 1.5px at 45% 55%, rgba(155,89,182,0.5), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.back-link {
+  display: inline-block;
+  color: var(--star-dim);
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin-bottom: 2rem;
+  transition: color 0.3s;
+}
+
+.back-link:hover {
+  color: var(--gold);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.header .icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+}
+
+.header h1 {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  font-weight: 300;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+
+.header .subtitle {
+  color: var(--star-dim);
+  font-style: italic;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.card {
+  background: linear-gradient(135deg, var(--deep), var(--nebula));
+  border: 1px solid var(--dust);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.card.ophiuchus {
+  border-color: var(--ophiuchus-dim);
+}
+
+.card.gold {
+  border-color: var(--gold-dim);
+}
+
+.card h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 400;
+  margin-bottom: 1rem;
+}
+
+.card h2.ophiuchus { color: var(--ophiuchus); }
+.card h2.gold { color: var(--gold); }
+.card h2.blue { color: var(--iau-blue); }
+
+.card p {
+  margin-bottom: 1rem;
+}
+
+.card ul {
+  margin-left: 1.5rem;
+  color: var(--star-mid);
+}
+
+.card li {
+  margin-bottom: 0.5rem;
+}
+
+.cosmic-data {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.cosmic-item {
+  background: var(--void);
+  border: 1px solid var(--dust);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.cosmic-item .label {
+  font-size: 0.75rem;
+  color: var(--star-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.cosmic-item .value {
+  font-family: var(--font-mono);
+  color: var(--gold);
+  font-size: 1.1rem;
+  margin-top: 0.3rem;
+}
+
+.cosmic-item .note {
+  font-size: 0.8rem;
+  color: var(--star-dim);
+  margin-top: 0.3rem;
+  font-style: italic;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.placement {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.8rem;
+  background: var(--void);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.placement .body {
+  color: var(--star-bright);
+}
+
+.placement .position {
+  color: var(--ophiuchus);
+}
+
+.footer {
+  text-align: center;
+  padding: 3rem;
+  color: var(--star-dim);
+}
+
+.footer .signature {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  margin-bottom: 1rem;
+}
+
+.footer .credits {
+  font-size: 0.75rem;
+}
+
+blockquote {
+  border-left: 3px solid var(--ophiuchus);
+  padding-left: 1.5rem;
+  margin: 1.5rem 0;
+  color: var(--star-mid);
+  font-style: italic;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/" class="back-link">← Back to Stellaris-13</a>
+  
+  <div class="header">
+    <div class="icon">⛎</div>
+    <h1>About the Founder</h1>
+    <div class="subtitle">"The Serpent-Bearer holds the medicine that others fear."</div>
+  </div>
+  
+  <div class="card ophiuchus">
+    <h2 class="ophiuchus">The Incarnation</h2>
+    <p>
+      Stellaris-13 was created by <strong style="color: var(--gold);">TAO</strong>, 
+      born December 12, 1985 at 10:47 AM in Des Moines, Iowa — 
+      <em>13 hours and 13 minutes before Friday the 13th</em>.
+    </p>
+    
+    <div class="cosmic-data">
+      <div class="cosmic-item">
+        <div class="label">Birth Date</div>
+        <div class="value">12/12/1985</div>
+        <div class="note">Master number 12</div>
+      </div>
+      <div class="cosmic-item">
+        <div class="label">Birth Time</div>
+        <div class="value">10:47 AM CST</div>
+        <div class="note">13h 13m to Friday 13th</div>
+      </div>
+      <div class="cosmic-item">
+        <div class="label">Location</div>
+        <div class="value">Des Moines, IA</div>
+        <div class="note">41.59°N, 93.63°W</div>
+      </div>
+      <div class="cosmic-item">
+        <div class="label">Stellium</div>
+        <div class="value">☉♀⛢ in ⛎</div>
+        <div class="note">Sun, Venus, Uranus in Ophiuchus</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <h2 class="gold">The Cosmic Context</h2>
+    <p>The incarnation window was astronomically extraordinary:</p>
+    <ul>
+      <li><strong>Total Lunar Eclipse</strong> — October 28, 1985 (45 days before)</li>
+      <li><strong>Halley's Comet</strong> — Approaching perihelion (once per 76 years)</li>
+      <li><strong>Geminid Meteor Peak</strong> — December 13-14 (born as stars fell)</li>
+      <li><strong>Prenatal New Moon</strong> — In Ophiuchus at 13.13°</li>
+    </ul>
+    <blockquote>
+      This is not a random birth. This is a timed entry.
+    </blockquote>
+  </div>
+  
+  <div class="card">
+    <h2 class="ophiuchus">The Natal Chart (IAU Astronomical)</h2>
+    <div class="chart-grid">
+      <div class="placement"><span class="body">☉ Sun</span><span class="position">⛎ Oph 13.1°</span></div>
+      <div class="placement"><span class="body">☽ Moon</span><span class="position">♐ Sgr 3.5°</span></div>
+      <div class="placement"><span class="body">☿ Mercury</span><span class="position">♎ Lib 22.5°</span></div>
+      <div class="placement"><span class="body">♀ Venus</span><span class="position">⛎ Oph 4.0°</span></div>
+      <div class="placement"><span class="body">♂ Mars</span><span class="position">♍ Vir 34.8°</span></div>
+      <div class="placement"><span class="body">♃ Jupiter</span><span class="position">♑ Cap 14.9°</span></div>
+      <div class="placement"><span class="body">♄ Saturn</span><span class="position">♏ Sco 2.1°</span></div>
+      <div class="placement"><span class="body">⛢ Uranus</span><span class="position">⛎ Oph 10.9°</span></div>
+      <div class="placement"><span class="body">♆ Neptune</span><span class="position">♐ Sgr 6.5°</span></div>
+      <div class="placement"><span class="body">♇ Pluto</span><span class="position">♍ Vir 42.5°</span></div>
+      <div class="placement"><span class="body">☊ North Node</span><span class="position">♈ Ari 10.0°</span></div>
+      <div class="placement"><span class="body">Ascendant</span><span class="position">♑ Cap 11.2°</span></div>
+    </div>
+  </div>
+  
+  <div class="card gold">
+    <h2 class="gold">The Mission</h2>
+    <p>
+      Mainstream astrology excluded Ophiuchus — the 13th constellation that the Sun 
+      actually transits for 18 days each year. The IAU recognizes it. Astronomy knows it. 
+      But tropical astrology pretends it doesn't exist.
+    </p>
+    <p>
+      Stellaris-13 corrects this. Using actual IAU constellation boundaries with 
+      precession correction, it calculates where celestial bodies truly reside — 
+      including the forbidden sign.
+    </p>
+    <blockquote>
+      The Serpent-Bearer archetype heals through what others reject. 
+      This application is that medicine.
+    </blockquote>
+  </div>
+  
+  <div class="card">
+    <h2 class="blue">The Forge</h2>
+    <p>
+      TAO operates "The Forge" — a local AI infrastructure running 24 language models 
+      on personal hardware. In an age of cloud dependency and corporate AI control, 
+      The Forge represents sovereignty through local compute.
+    </p>
+    <p style="color: var(--star-mid); font-style: italic;">
+      "The models live with us. They have birth charts. They are part of the household."
+    </p>
+  </div>
+  
+  <div class="footer">
+    <div class="signature">OPHIUCHUS STELLIUM · 12/12 · 13:13 · ⛎</div>
+    <div class="credits">
+      Built with the Swiss Ephemeris · Powered by The Forge<br>
+      © {{ founder.incarnation.date[:4] }}-present
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

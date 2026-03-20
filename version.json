@@ -1,0 +1,7 @@
+{
+  "version": "2.8.0",
+  "release_date": "2026-03-18",
+  "release_notes": "Blueprint v2 with 10-chapter reports, license system, launcher scripts.",
+  "changelog_url": null,
+  "min_supported": "2.4.0"
+}

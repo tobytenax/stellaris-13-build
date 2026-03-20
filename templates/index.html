@@ -1,0 +1,3925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stellaris-13 — Astronomical Ephemeris</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --void: #0a0a0f;
+  --deep: #0f0f1a;
+  --nebula: #141425;
+  --dust: #1a1a30;
+  --star-dim: #3a3a5c;
+  --star-mid: #7a7aaa;
+  --star-bright: #c8c8e8;
+  --star-white: #eeeef8;
+  --gold: #d4a847;
+  --gold-dim: #8a7030;
+  --gold-bright: #f0cc60;
+  --ophiuchus: #9b59b6;
+  --ophiuchus-dim: #6a3a80;
+  --iau-blue: #4aa8d8;
+  --iau-dim: #2a6888;
+  --fire: #c0392b;
+  --water: #2980b9;
+  --earth: #27ae60;
+  --air: #f39c12;
+  --retro-red: #e74c3c;
+  
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  font-size: 15px;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--void);
+  color: var(--star-bright);
+  font-family: var(--font-body);
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ═══ STARFIELD BACKGROUND ═══ */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 50% 30%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.2), transparent),
+    radial-gradient(1px 1px at 90% 10%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 85% 45%, rgba(212,168,71,0.6), transparent),
+    radial-gradient(1.5px 1.5px at 45% 55%, rgba(155,89,182,0.5), transparent),
+    radial-gradient(1px 1px at 60% 15%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 25% 45%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 80% 65%, rgba(255,255,255,0.2), transparent),
+    radial-gradient(1px 1px at 5% 55%, rgba(255,255,255,0.3), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══ LAYOUT ═══ */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══ HEADER ═══ */
+header {
+  text-align: center;
+  padding: 4rem 0 2rem;
+}
+
+.logo-mark {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 300;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: 3.8rem;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  color: var(--star-white);
+  line-height: 1.1;
+}
+
+h1 .thirteen {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.subtitle {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--star-mid);
+  margin-top: 0.6rem;
+  letter-spacing: 0.02em;
+}
+
+.divider {
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  margin: 2rem auto;
+}
+
+/* ═══ TABS ═══ */
+.tab-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--dust);
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: var(--star-dim);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.8rem 2rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s;
+}
+
+.tab:hover { color: var(--star-mid); }
+.tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+/* ═══ FORM ═══ */
+.input-panel {
+  background: linear-gradient(135deg, var(--deep) 0%, var(--nebula) 100%);
+  border: 1px solid var(--dust);
+  border-radius: 12px;
+  padding: 2.2rem 2.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr;
+  gap: 1.2rem 1.8rem;
+  align-items: end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--star-dim);
+}
+
+.form-group input, .form-group select {
+  background: var(--void);
+  border: 1px solid var(--dust);
+  border-radius: 6px;
+  color: var(--star-white);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 300;
+  padding: 0.65rem 0.9rem;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--gold-dim);
+}
+
+.form-group input::placeholder {
+  color: var(--star-dim);
+  font-style: italic;
+}
+
+.btn-compute {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  border: none;
+  border-radius: 8px;
+  color: var(--void);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 0.5rem;
+}
+
+.btn-compute:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(212, 168, 71, 0.25);
+}
+
+.btn-compute:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ═══ METHOD TOGGLE ═══ */
+.method-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 2rem;
+  background: var(--deep);
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px solid var(--dust);
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.method-btn {
+  background: none;
+  border: none;
+  padding: 0.55rem 1.4rem;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: var(--star-dim);
+  white-space: nowrap;
+}
+
+.method-btn.active-standard {
+  background: var(--ophiuchus-dim);
+  color: white;
+}
+
+.method-btn.active-iau {
+  background: var(--iau-dim);
+  color: white;
+}
+
+.method-btn.active-dual {
+  background: linear-gradient(135deg, var(--ophiuchus-dim), var(--iau-dim));
+  color: white;
+}
+
+.method-btn:hover:not(.active-standard):not(.active-iau):not(.active-dual) {
+  color: var(--star-mid);
+}
+
+/* ═══ CHART RESULTS ═══ */
+#results {
+  display: none;
+}
+
+.chart-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.chart-name {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 300;
+  color: var(--star-white);
+}
+
+.chart-meta {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--star-dim);
+  margin-top: 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.chart-meta .sect-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-left: 0.5rem;
+}
+
+.sect-day {
+  background: rgba(241, 196, 15, 0.15);
+  color: var(--gold);
+  border: 1px solid rgba(241, 196, 15, 0.3);
+}
+
+.sect-night {
+  background: rgba(74, 168, 216, 0.15);
+  color: var(--iau-blue);
+  border: 1px solid rgba(74, 168, 216, 0.3);
+}
+
+/* ═══ SECTION HEADERS ═══ */
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--gold);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--dust);
+  letter-spacing: 0.03em;
+}
+
+.section-title .icon { margin-right: 0.5rem; }
+
+/* ═══ PLACEMENT TABLE ═══ */
+.placement-section {
+  margin-bottom: 2.5rem;
+}
+
+.placement-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.placement-table thead th {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--star-dim);
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid var(--dust);
+  position: sticky;
+  top: 0;
+  background: var(--void);
+}
+
+.placement-table tbody tr {
+  transition: background 0.2s;
+}
+
+.placement-table tbody tr:hover {
+  background: rgba(212, 168, 71, 0.04);
+}
+
+.placement-table td {
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid rgba(26, 26, 48, 0.6);
+  vertical-align: middle;
+  font-size: 0.88rem;
+}
+
+.body-name {
+  font-weight: 400;
+  color: var(--star-white);
+  white-space: nowrap;
+}
+
+.body-name .retro {
+  color: var(--retro-red);
+  font-size: 0.75rem;
+  margin-left: 0.3rem;
+}
+
+.tropical-cell {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--star-mid);
+}
+
+.constellation-cell {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.standard-col { color: var(--ophiuchus); }
+.iau-col { color: var(--iau-blue); }
+
+.constellation-symbol {
+  font-size: 1.1rem;
+  margin-right: 0.3rem;
+  vertical-align: middle;
+}
+
+.shifted-marker {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.shifted-standard { background: var(--ophiuchus); }
+.shifted-iau { background: var(--iau-blue); }
+
+.house-cell {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--star-dim);
+  text-align: center;
+}
+
+/* ═══ ASPECTS TABLE ═══ */
+.aspects-section {
+  margin-bottom: 2.5rem;
+}
+
+.aspect-row {
+  display: grid;
+  grid-template-columns: 2fr auto 2fr auto;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-bottom: 1px solid rgba(26, 26, 48, 0.4);
+  font-size: 0.84rem;
+  align-items: center;
+}
+
+.aspect-row:hover {
+  background: rgba(212, 168, 71, 0.04);
+}
+
+.aspect-body1 {
+  text-align: right;
+  color: var(--star-bright);
+}
+
+.aspect-glyph {
+  text-align: center;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  min-width: 36px;
+}
+
+.asp-CON { background: rgba(231,76,60,0.15); color: #e74c3c; }
+.asp-OPP { background: rgba(231,76,60,0.1); color: #c0392b; }
+.asp-TRI { background: rgba(46,204,113,0.12); color: #2ecc71; }
+.asp-SQR { background: rgba(231,76,60,0.1); color: #e67e22; }
+.asp-SEX { background: rgba(52,152,219,0.12); color: #3498db; }
+.asp-QUI { background: rgba(155,89,182,0.12); color: #9b59b6; }
+.asp-SSX { background: rgba(52,152,219,0.08); color: #7f8c8d; }
+.asp-SSQ { background: rgba(241,196,15,0.08); color: #7f8c8d; }
+.asp-SQQ { background: rgba(241,196,15,0.08); color: #7f8c8d; }
+
+.aspect-body2 {
+  color: var(--star-bright);
+}
+
+.aspect-orb {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--star-dim);
+  text-align: right;
+}
+
+/* ═══ SHIFT SUMMARY ═══ */
+.shift-summary {
+  background: linear-gradient(135deg, var(--deep), var(--nebula));
+  border: 1px solid var(--dust);
+  border-radius: 10px;
+  padding: 1.8rem 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.shift-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.4rem 0;
+  font-size: 0.88rem;
+}
+
+.shift-arrow {
+  color: var(--gold-dim);
+  font-size: 0.8rem;
+}
+
+.shift-old {
+  color: var(--star-dim);
+  text-decoration: line-through;
+  font-style: italic;
+}
+
+.shift-new-standard { color: var(--ophiuchus); font-weight: 400; }
+.shift-new-iau { color: var(--iau-blue); font-weight: 400; }
+
+/* ═══ LEGEND ═══ */
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  font-size: 0.78rem;
+  color: var(--star-dim);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot.standard { background: var(--ophiuchus); }
+.legend-dot.iau { background: var(--iau-blue); }
+.legend-dot.tropical { background: var(--star-dim); }
+
+/* ═══ SYNASTRY TAB ═══ */
+.synastry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.synastry-grid .input-panel {
+  margin-bottom: 0;
+}
+
+.synastry-grid .form-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.synastry-btn-wrapper {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* ═══ FOOTER ═══ */
+footer {
+  text-align: center;
+  padding: 3rem 0 2rem;
+  font-size: 0.72rem;
+  color: var(--star-dim);
+  border-top: 1px solid var(--dust);
+  margin-top: 3rem;
+}
+
+footer a {
+  color: var(--gold-dim);
+  text-decoration: none;
+}
+
+/* ═══ LOADING ═══ */
+.spinner {
+  display: none;
+  text-align: center;
+  padding: 3rem;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.1rem;
+}
+
+.spinner::before {
+  content: '⛎';
+  display: block;
+  font-size: 2rem;
+  animation: spin 3s linear infinite;
+  margin-bottom: 0.8rem;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* v2.4: Chat typing indicator */
+@keyframes blink {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 768px) {
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .synastry-grid { grid-template-columns: 1fr; }
+  h1 { font-size: 2.6rem; }
+  .container { padding: 0 1rem; }
+  .legend { flex-wrap: wrap; gap: 1rem; }
+}
+
+@media (max-width: 500px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .tab { padding: 0.6rem 1rem; font-size: 0.75rem; }
+}
+
+/* ═══ ANIMATIONS ═══ */
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hide tab content */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ═══ CHART ACTIONS ═══ */
+.btn-action {
+  background: linear-gradient(135deg, var(--dust), var(--nebula));
+  border: 1px solid var(--star-dim);
+  border-radius: 6px;
+  color: var(--star-bright);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 400;
+  padding: 0.7rem 1.4rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-action:hover {
+  background: linear-gradient(135deg, var(--nebula), var(--dust));
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+.btn-action.interp-type {
+  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+}
+
+.btn-action.interp-type.active {
+  background: linear-gradient(135deg, var(--ophiuchus-dim), var(--ophiuchus));
+  border-color: var(--ophiuchus);
+  color: white;
+}
+
+.btn-action.blueprint-btn {
+  background: linear-gradient(135deg, rgba(212, 168, 83, 0.2), rgba(212, 168, 83, 0.1));
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.btn-action.blueprint-btn:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+  color: var(--void);
+}
+
+/* ═══ CHART WHEEL ═══ */
+.wheel-svg {
+  max-width: 520px;
+  width: 100%;
+  height: auto;
+}
+
+.wheel-svg text {
+  font-family: var(--font-mono);
+}
+
+.wheel-segment-standard { fill: rgba(155, 89, 182, 0.08); stroke: var(--ophiuchus-dim); }
+.wheel-segment-iau { fill: rgba(74, 168, 216, 0.08); stroke: var(--iau-dim); }
+.wheel-segment:hover { fill: rgba(212, 168, 71, 0.15); }
+
+/* ═══ TRANSIT RESULTS ═══ */
+.transit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.transit-planets, .transit-aspects {
+  background: var(--deep);
+  border: 1px solid var(--dust);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .transit-grid { grid-template-columns: 1fr; }
+}
+
+/* ═══ LOCATION MAP ═══ */
+.map-container {
+  height: 200px;
+  border-radius: 8px;
+  border: 1px solid var(--dust);
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.map-container .leaflet-container {
+  height: 100%;
+  background: var(--void);
+}
+
+.map-toggle-btn {
+  font-size: 0.72rem;
+  padding: 0.3rem 0.6rem;
+  margin-top: 0.3rem;
+}
+
+/* ═══ EXPAND BUTTON ═══ */
+.expand-btn {
+  background: none;
+  border: 1px solid var(--dust);
+  color: var(--star-dim);
+  font-size: 0.72rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: all 0.3s;
+}
+
+.expand-btn:hover {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+/* ═══ PROFILE PICKER ═══ */
+.profile-picker {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.profile-btn {
+  background: var(--void);
+  border: 1px solid var(--dust);
+  color: var(--star-mid);
+  font-size: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.profile-btn:hover {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+.profile-btn.active {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  color: var(--void);
+}
+
+/* ═══ API PROVIDER CHECKBOXES ═══ */
+.api-providers {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.api-provider-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--star-mid);
+}
+
+.api-provider-option input[type="checkbox"] {
+  accent-color: var(--ophiuchus);
+}
+
+.api-key-row {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+  align-items: center;
+}
+
+.api-key-row label {
+  min-width: 60px;
+  font-size: 0.72rem;
+  color: var(--star-dim);
+}
+
+.api-key-row input {
+  flex: 1;
+  background: var(--deep);
+  border: 1px solid var(--dust);
+  border-radius: 4px;
+  color: var(--star-bright);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+}
+
+/* ═══ WHEEL OPTIONS ═══ */
+.wheel-options {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.wheel-option {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--star-mid);
+}
+
+.wheel-option input[type="checkbox"] {
+  accent-color: var(--gold);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo-mark">Astronomical Ephemeris</div>
+    <h1>Stellaris-<span class="thirteen">13</span></h1>
+    <p class="subtitle">The first dual-method 13-sign chart calculator</p>
+    <div class="divider"></div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab active" data-tab="natal">Natal Chart</button>
+    <button class="tab" data-tab="transits">Transits</button>
+    <button class="tab" data-tab="synastry">Synastry</button>
+    <button class="tab" data-tab="crypto" style="color: var(--gold);">🪙 Crypto</button>
+    <button class="tab" data-tab="rectify">⚕ Rectify Time</button>
+    <button class="tab" data-tab="about">About</button>
+  </div>
+
+  <!-- Global Utilities -->
+  <div style="display: flex; justify-content: center; gap: 1rem; padding: 0.5rem; background: var(--void); border-bottom: 1px solid var(--dust);">
+    <input type="file" id="global-load-file" accept=".json" style="display:none;" onchange="loadChartFile(event)">
+    <button class="btn-action" onclick="triggerChartLoad()" style="font-size: 0.75rem;">⬆ Load Chart JSON</button>
+    <button class="btn-action" onclick="if (typeof showLicenseDialog !== 'undefined') showLicenseDialog(); else alert('License system initializing...');" style="font-size: 0.75rem;">🔑 License</button>
+    <span id="loaded-profiles-indicator" style="font-size: 0.72rem; color: var(--star-dim); display: flex; align-items: center;"></span>
+    <span data-tier-badge style="font-size: 0.75rem; margin-left: auto; color: var(--gold);"></span>
+  </div>
+
+  <!-- ═══ NATAL TAB ═══ -->
+  <div class="tab-content active" id="tab-natal">
+    <div class="input-panel">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="name" placeholder="Who are you?" value="">
+        </div>
+        <div class="form-group">
+          <label>Date of Birth</label>
+          <input type="date" id="date" value="1985-12-12">
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" id="time" step="1" value="10:47:00">
+        </div>
+        <div class="form-group">
+          <label>Latitude</label>
+          <input type="text" id="lat" placeholder="41.5868" value="">
+        </div>
+        <div class="form-group">
+          <label>Longitude</label>
+          <input type="text" id="lon" placeholder="-93.6250" value="">
+        </div>
+        <div class="form-group">
+          <label>UTC Offset</label>
+          <input type="text" id="tz" placeholder="-6" value="">
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <button type="button" class="btn-action map-toggle-btn" onclick="toggleMap('natal-map', 'lat', 'lon')">📍 Pick Location on Map</button>
+          <div id="natal-map" class="map-container" style="display:none;"></div>
+        </div>
+        <button class="btn-compute" id="btn-compute" onclick="computeChart()">
+          Cast Chart ✦
+        </button>
+      </div>
+    </div>
+
+    <div class="spinner" id="spinner">Consulting the heavens...</div>
+
+    <div id="results">
+      <!-- Method Toggle -->
+      <div class="method-toggle">
+        <button class="method-btn active-dual" data-method="dual" onclick="setMethod('dual', this)">Dual View</button>
+        <button class="method-btn" data-method="standard" onclick="setMethod('standard', this)">Standard 13-Sign</button>
+        <button class="method-btn" data-method="iau" onclick="setMethod('iau', this)">IAU Astronomical</button>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot tropical"></span> Tropical (12-sign)</div>
+        <div class="legend-item"><span class="legend-dot standard"></span> Standard 13-Sign (Sidereal)</div>
+        <div class="legend-item"><span class="legend-dot iau"></span> IAU Astronomical (RA/Dec)</div>
+      </div>
+
+      <div class="chart-header" id="chart-header"></div>
+
+      <!-- Angles -->
+      <div class="placement-section">
+        <div class="section-title"><span class="icon">◇</span>Angles</div>
+        <table class="placement-table">
+          <thead id="angles-thead"></thead>
+          <tbody id="angles-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Planets -->
+      <div class="placement-section">
+        <div class="section-title"><span class="icon">✦</span>Planetary Placements</div>
+        <table class="placement-table">
+          <thead id="planets-thead"></thead>
+          <tbody id="planets-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Points -->
+      <div class="placement-section">
+        <div class="section-title"><span class="icon">⊕</span>Points & Asteroids</div>
+        <table class="placement-table">
+          <thead id="points-thead"></thead>
+          <tbody id="points-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Constellation Shifts -->
+      <div class="placement-section" id="shift-summary">
+        <div class="section-title"><span class="icon">↻</span>Constellation Shifts from Tropical</div>
+        <table class="placement-table">
+          <thead>
+            <tr>
+              <th>Body</th>
+              <th>Tropical</th>
+              <th></th>
+              <th>13-Sign Constellation</th>
+            </tr>
+          </thead>
+          <tbody id="shift-list"></tbody>
+        </table>
+      </div>
+
+      <!-- Aspects -->
+      <div class="aspects-section">
+        <div class="section-title"><span class="icon">∠</span>Tightest Aspects</div>
+        <div id="aspects-list"></div>
+        <button class="expand-btn" id="expand-aspects-btn" onclick="toggleAspectExpand()" style="display:none;">Show All Aspects ▼</button>
+      </div>
+
+      <!-- Syzygy (Prenatal Lunation) -->
+      <div class="syzygy-section" id="syzygy-section" style="display:none;">
+        <div class="section-title"><span class="icon">☾</span>Prenatal Syzygy</div>
+        <div id="syzygy-display" style="font-family: var(--font-mono); font-size: 0.88rem; padding: 1rem; background: var(--deep); border-radius: 8px; border: 1px solid var(--dust);"></div>
+      </div>
+
+      <!-- Chart Wheel -->
+      <div class="wheel-section">
+        <div class="section-title"><span class="icon">◎</span>Chart Wheel</div>
+        <div class="wheel-options">
+          <label class="wheel-option"><input type="checkbox" id="show-aspect-lines" onchange="redrawWheel()"> Aspect Lines</label>
+          <label class="wheel-option"><input type="checkbox" id="show-degree-marks" checked onchange="redrawWheel()"> Degree Marks</label>
+          <label class="wheel-option"><input type="checkbox" id="show-house-numbers" checked onchange="redrawWheel()"> Houses</label>
+        </div>
+        <div id="chart-wheel" style="display:flex; justify-content:center; padding: 1.5rem 0;"></div>
+      </div>
+
+      <!-- Chart Actions -->
+      <div class="chart-actions" style="display:flex; justify-content:center; gap:1rem; padding:2rem 0; flex-wrap:wrap;">
+        <button class="btn-action" onclick="downloadChart()">⬇ Download JSON</button>
+        <button class="btn-action" onclick="useChartForTransits()">↻ Use for Transits</button>
+        <button class="btn-action" onclick="useChartForSynastry()">↔ Use for Synastry</button>
+        <button class="btn-action" onclick="requestInterpretation()">✦ AI Interpretation</button>
+        <button class="btn-action blueprint-btn" onclick="generateBlueprint()">📜 Generate Blueprint</button>
+        <input type="file" id="load-file" accept=".json" style="display:none;" onchange="loadChartFile(event)">
+        <button class="btn-action" onclick="document.getElementById('load-file').click()">⬆ Load Chart</button>
+      </div>
+      
+      <!-- Blueprint Generation Panel -->
+      <div id="blueprint-panel" style="display:none; background: linear-gradient(135deg, #1a0f20, #2d1a35); border: 1px solid var(--gold-dim); border-radius: 10px; padding: 2rem; margin-top: 1rem;">
+        <div class="section-title" style="color: var(--gold);"><span class="icon">📜</span>Celestial Blueprint Generator v2</div>
+        <p style="color: var(--star-mid); margin-bottom: 0.5rem; font-size: 0.9rem;">
+          Generate a professional 20+ page natal chart document with AI-written chapters covering:
+        </p>
+        <div style="color: var(--star-mid); font-size: 0.85rem; margin-bottom: 1rem; columns: 2; column-gap: 1rem;">
+          <div>✦ Complete Natal Chart Analysis</div>
+          <div>✦ Current & Upcoming Transits</div>
+          <div>✦ Secondary Progressions</div>
+          <div>✦ Solar Arc Directions</div>
+          <div>✦ Relationship Archetypes</div>
+          <div>✦ Past Lives & Karma</div>
+          <div>✦ Psychological Profile</div>
+          <div>✦ Predictive Timing & Destiny</div>
+          <div>✦ Special Topics & Synthesis</div>
+        </div>
+        <p style="color: var(--star-dim); font-size: 0.8rem; margin-bottom: 1rem;">
+          Processing time: ~90-180 seconds depending on AI provider. 10 chapters generated sequentially.
+        </p>
+        
+        <button class="btn-action" id="btn-generate-blueprint" onclick="startBlueprintGeneration()" 
+          style="width: 100%; background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: var(--void); font-weight: 600;">
+          📜 Generate Full Celestial Blueprint
+        </button>
+        
+        <div id="blueprint-progress" style="display: none; margin-top: 1rem;">
+          <div style="background: var(--dust); border-radius: 4px; height: 8px; overflow: hidden;">
+            <div id="blueprint-progress-bar" style="background: var(--gold); height: 100%; width: 0%; transition: width 0.5s;"></div>
+          </div>
+          <p id="blueprint-status" style="color: var(--star-mid); font-size: 0.85rem; margin-top: 0.5rem; text-align: center;"></p>
+        </div>
+        
+        <div id="blueprint-result" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(46, 204, 113, 0.1); border-radius: 8px; border: 1px solid #2ecc71;">
+          <p style="color: #2ecc71; margin-bottom: 0.5rem;">✓ Blueprint generated successfully!</p>
+          <a id="blueprint-download-link" href="#" class="btn-action" style="display: inline-block; background: #2ecc71; color: var(--void);">
+            ⬇ Download Blueprint (.docx)
+          </a>
+        </div>
+      </div>
+
+      <!-- AI Interpretation Panel -->
+      <div id="interpretation-panel" style="display:none; background: linear-gradient(135deg, var(--deep), var(--nebula)); border: 1px solid var(--ophiuchus-dim); border-radius: 10px; padding: 2rem; margin-top: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div class="section-title" style="color: var(--ophiuchus); margin: 0;"><span class="icon">✧</span>AI Interpretation</div>
+          <button onclick="requestInterpretation()" style="background: var(--ophiuchus-dim); color: var(--star-white); border: none; border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.75rem; transition: all 0.2s;" onmouseover="this.style.background='var(--ophiuchus)'" onmouseout="this.style.background='var(--ophiuchus-dim)'" title="Regenerate interpretation">
+            ↻ Regenerate
+          </button>
+        </div>
+        
+        <!-- API Provider Selection -->
+        <div id="api-config-section" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--void); border-radius: 8px; border: 1px solid var(--dust);">
+          <label style="font-size: 0.75rem; color: var(--star-dim); text-transform: uppercase; letter-spacing: 0.1em;">AI Providers (select multiple for comparison)</label>
+          
+          <div class="api-providers">
+            <label class="api-provider-option">
+              <input type="checkbox" id="use-mistral" checked> Mistral
+            </label>
+            <label class="api-provider-option">
+              <input type="checkbox" id="use-claude"> Claude
+            </label>
+            <label class="api-provider-option">
+              <input type="checkbox" id="use-ollama"> Local Ollama
+            </label>
+            <label class="api-provider-option">
+              <input type="checkbox" id="use-yi"> Yi (01.AI)
+            </label>
+            <label class="api-provider-option">
+              <input type="checkbox" id="use-fireworks"> Fireworks
+            </label>
+            <label class="api-provider-option">
+              <input type="checkbox" id="use-groq"> Groq
+            </label>
+          </div>
+          
+          <div id="mistral-key-row" class="api-key-row">
+            <label>Mistral:</label>
+            <input type="password" id="mistral-api-key" placeholder="Mistral API key (free at console.mistral.ai)">
+          </div>
+          
+          <div id="claude-key-row" class="api-key-row" style="display:none;">
+            <label>Claude:</label>
+            <input type="password" id="claude-api-key" placeholder="Anthropic API key">
+          </div>
+          
+          <div id="ollama-config-row" class="api-key-row" style="display:none;">
+            <label>Models:</label>
+            <select id="ollama-model" multiple style="width:100%;min-height:80px;padding:0.4rem;background:var(--void);color:var(--star-bright);border:1px solid var(--dust);border-radius:4px;font-size:0.82rem;font-family:var(--font-mono);">
+              <option value="hermes3:8b" selected>hermes3:8b</option>
+            </select>
+            <div style="display:flex;gap:0.5rem;margin-top:0.4rem;align-items:center;">
+              <button class="btn-action" onclick="refreshOllamaModels()" style="font-size:0.7rem;padding:0.3rem 0.6rem;">↻ Refresh from Ollama</button>
+              <span id="ollama-status" style="font-size:0.7rem;color:var(--star-dim);"></span>
+            </div>
+            <small style="color: var(--star-dim); display: block; margin-top: 0.3rem;">Hold Ctrl/Cmd to select multiple models (runs sequentially)</small>
+          </div>
+          
+          <div id="yi-key-row" class="api-key-row" style="display:none;">
+            <label>Yi:</label>
+            <input type="password" id="yi-api-key" placeholder="01.AI API key">
+          </div>
+          
+          <div id="fireworks-key-row" class="api-key-row" style="display:none;">
+            <label>Fireworks:</label>
+            <input type="password" id="fireworks-api-key" placeholder="Fireworks API key">
+          </div>
+          
+          <div id="groq-key-row" class="api-key-row" style="display:none;">
+            <label>Groq:</label>
+            <input type="password" id="groq-api-key" placeholder="Groq API key (fast inference)">
+          </div>
+          
+          <div style="margin-top: 0.8rem;">
+            <button class="btn-action" onclick="saveAllApiKeys()" style="font-size: 0.75rem;">Save API Keys</button>
+          </div>
+          
+          <div style="margin-top: 0.5rem; font-size: 0.7rem; color: var(--star-dim);">
+            Keys stored in browser only · Multiple providers = multiple interpretations · Cloud APIs run in parallel
+          </div>
+        </div>
+        
+        <!-- Interpretation Type Selector -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button class="btn-action interp-type active" data-type="comprehensive" onclick="setInterpType('comprehensive', this)">✦ Full Deep Dive</button>
+          <button class="btn-action interp-type" data-type="general" onclick="setInterpType('general', this)">◇ Overview</button>
+          <button class="btn-action interp-type" data-type="ophiuchus" onclick="setInterpType('ophiuchus', this)">⛎ Ophiuchus Focus</button>
+          <button class="btn-action interp-type" data-type="past_life" onclick="setInterpType('past_life', this)" style="background: linear-gradient(135deg, #6a3a80, #9b59b6);">☽ Past Life Reading</button>
+        </div>
+        
+        <div id="interpretation-content" style="font-family: var(--font-display); font-size: 1.05rem; line-height: 1.8; color: var(--star-bright);"></div>
+        <div id="interpretation-loading" style="display:none; text-align:center; color:var(--gold); padding:2rem;">
+          <div style="font-size: 2rem; animation: spin 3s linear infinite;">⛎</div>
+          <div style="margin-top: 0.5rem;">Consulting the oracle... This may take a moment for deep analysis.</div>
+        </div>
+        
+        <!-- v2.4: Conversational Chat Mode -->
+        <div id="chat-mode-section" style="margin-top: 2rem; border-top: 1px solid var(--dust); padding-top: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div class="section-title" style="margin: 0;"><span class="icon">💬</span>Chart Conversation</div>
+            <button class="btn-action" onclick="clearChat()" style="font-size: 0.7rem;">Clear Chat</button>
+          </div>
+          
+          <div id="chat-messages" style="
+            background: var(--void);
+            border: 1px solid var(--dust);
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: auto;
+            padding: 1rem;
+            margin-bottom: 1rem;
+          ">
+            <div style="text-align: center; color: var(--star-dim); padding: 2rem;">
+              Load or cast a chart, then ask questions about it.<br>
+              The AI will treat your chart as the sole source of truth.
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="chat-input" placeholder="Ask about your chart..." 
+                   style="flex: 1; background: var(--void); border: 1px solid var(--dust); border-radius: 6px; padding: 0.8rem; color: var(--star-white); font-family: var(--font-body);"
+                   onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button class="btn-action" onclick="sendChatMessage()" style="padding: 0.8rem 1.5rem;">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TRANSITS TAB ═══ -->
+  <div class="tab-content" id="tab-transits">
+    <div class="input-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-family: var(--font-display); color: var(--gold); font-weight:300;">Natal Chart Data</h3>
+        <div class="profile-picker" id="transit-profile-picker"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Name</label><input type="text" id="t-name" placeholder="Name"></div>
+        <div class="form-group"><label>Birth Date</label><input type="date" id="t-date"></div>
+        <div class="form-group"><label>Birth Time</label><input type="time" id="t-time" step="1"></div>
+        <div class="form-group"><label>Latitude</label><input type="text" id="t-lat" placeholder="41.5868"></div>
+        <div class="form-group"><label>Longitude</label><input type="text" id="t-lon" placeholder="-93.6250"></div>
+        <div class="form-group"><label>UTC Offset</label><input type="text" id="t-tz" placeholder="-6"></div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <button type="button" class="btn-action map-toggle-btn" onclick="toggleMap('transit-map', 't-lat', 't-lon')">📍 Pick Location on Map</button>
+          <div id="transit-map" class="map-container" style="display:none;"></div>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--dust);">
+        <h4 style="font-family: var(--font-display); color: var(--star-mid); margin-bottom:0.8rem; font-weight:300;">Transit Time (leave blank for now)</h4>
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-group"><label>Date</label><input type="date" id="t-transit-date"></div>
+          <div class="form-group"><label>Time</label><input type="time" id="t-transit-time" value="12:00"></div>
+        </div>
+      </div>
+      <button class="btn-compute" style="margin-top:1rem;" onclick="computeTransits()">Show Transits ✦</button>
+    </div>
+    <div class="spinner" id="transit-spinner">Reading the current sky...</div>
+    <div id="transit-results"></div>
+    
+    <!-- Transit AI Interpretation -->
+    <div id="transit-ai-section" style="display:none; margin-top: 2rem;">
+      
+      <!-- API Config (mirrors natal tab, reads from same saved keys) -->
+      <details id="transit-api-config" style="margin-bottom: 1rem; background: var(--void); border: 1px solid var(--dust); border-radius: 8px; padding: 0;">
+        <summary style="padding: 0.8rem 1rem; cursor: pointer; font-size: 0.8rem; color: var(--gold); user-select: none; list-style: none;">
+          ⚙ AI Provider Settings <span style="color:var(--star-dim); font-size:0.72rem; margin-left:0.5rem;">(configure API keys)</span>
+        </summary>
+        <div style="padding: 0 1rem 1rem 1rem;">
+          <div style="font-size:0.7rem;color:var(--star-dim);margin-bottom:0.8rem;">
+            Same keys as the Natal tab — set them once, they persist in your browser.
+          </div>
+          <div class="api-providers" style="margin-bottom:0.5rem;">
+            <label class="api-provider-option"><input type="checkbox" class="provider-toggle" data-provider="mistral" onchange="syncProviderToggle(this)"> Mistral</label>
+            <label class="api-provider-option"><input type="checkbox" class="provider-toggle" data-provider="claude" onchange="syncProviderToggle(this)"> Claude</label>
+            <label class="api-provider-option"><input type="checkbox" class="provider-toggle" data-provider="ollama" onchange="syncProviderToggle(this)"> Local Ollama</label>
+            <label class="api-provider-option"><input type="checkbox" class="provider-toggle" data-provider="groq" onchange="syncProviderToggle(this)"> Groq</label>
+          </div>
+          <div style="font-size:0.72rem;color:var(--star-dim);">
+            Keys are entered in the Natal tab's AI section and saved to your browser. If you haven't set them yet, 
+            <a href="#" onclick="document.querySelector('[data-tab=natal]').click(); setTimeout(()=>document.getElementById('api-config-section').scrollIntoView({behavior:'smooth'}),300); return false;" style="color:var(--gold);">go to Natal → AI Interpretation</a> to configure.
+          </div>
+        </div>
+      </details>
+      
+      <button class="btn-action" onclick="requestTransitInterpretation()" style="width: 100%;">✦ AI Transit Interpretation</button>
+      <div id="transit-interpretation" style="display:none; margin-top: 1rem; padding: 1.5rem; background: linear-gradient(135deg, var(--deep), var(--nebula)); border: 1px solid var(--iau-dim); border-radius: 10px;">
+        <div id="transit-interp-content" style="font-family: var(--font-display); font-size: 1rem; line-height: 1.7;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SYNASTRY TAB ═══ -->
+  <div class="tab-content" id="tab-synastry">
+    <div class="synastry-grid">
+      <div class="input-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h3 style="font-family: var(--font-display); color: var(--gold); font-weight:300;">Person A</h3>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn-action" onclick="loadChartForSynastry('a')" style="font-size: 0.7rem;">⬆ Import JSON</button>
+            <div class="profile-picker" id="synastry-profile-picker-a"></div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>Name</label><input type="text" id="s1-name" placeholder="Name"></div>
+          <div class="form-group"><label>Date</label><input type="date" id="s1-date"></div>
+          <div class="form-group"><label>Time</label><input type="time" id="s1-time" step="1"></div>
+          <div class="form-group"><label>Latitude</label><input type="text" id="s1-lat" placeholder="Lat"></div>
+          <div class="form-group"><label>Longitude</label><input type="text" id="s1-lon" placeholder="Lon"></div>
+          <div class="form-group"><label>UTC Offset</label><input type="text" id="s1-tz" placeholder="-6"></div>
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <button type="button" class="btn-action map-toggle-btn" onclick="toggleMap('s1-map', 's1-lat', 's1-lon')">📍 Map</button>
+            <div id="s1-map" class="map-container" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="input-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h3 style="font-family: var(--font-display); color: var(--gold); font-weight:300;">Person B</h3>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn-action" onclick="loadChartForSynastry('b')" style="font-size: 0.7rem;">⬆ Import JSON</button>
+            <div class="profile-picker" id="synastry-profile-picker-b"></div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>Name</label><input type="text" id="s2-name" placeholder="Name"></div>
+          <div class="form-group"><label>Date</label><input type="date" id="s2-date"></div>
+          <div class="form-group"><label>Time</label><input type="time" id="s2-time" step="1"></div>
+          <div class="form-group"><label>Latitude</label><input type="text" id="s2-lat" placeholder="Lat"></div>
+          <div class="form-group"><label>Longitude</label><input type="text" id="s2-lon" placeholder="Lon"></div>
+          <div class="form-group"><label>UTC Offset</label><input type="text" id="s2-tz" placeholder="-6"></div>
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <button type="button" class="btn-action map-toggle-btn" onclick="toggleMap('s2-map', 's2-lat', 's2-lon')">📍 Map</button>
+            <div id="s2-map" class="map-container" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="synastry-btn-wrapper">
+      <button class="btn-compute" style="width:400px;" onclick="computeSynastry()">Compare Charts ✦</button>
+    </div>
+    <div class="spinner" id="syn-spinner">Weaving the threads...</div>
+    <div id="syn-results"></div>
+    
+    <!-- Synastry AI Interpretation -->
+    <div id="synastry-ai-section" style="display:none; margin-top: 2rem;">
+      <button class="btn-action" onclick="requestSynastryInterpretation()" style="width: 100%;">✦ AI Synastry Interpretation</button>
+      <div id="synastry-interpretation" style="display:none; margin-top: 1rem; padding: 1.5rem; background: linear-gradient(135deg, var(--deep), var(--nebula)); border: 1px solid var(--ophiuchus-dim); border-radius: 10px;">
+        <div id="synastry-interp-content" style="font-family: var(--font-display); font-size: 1rem; line-height: 1.7;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CRYPTO TAB ═══ -->
+  <div class="tab-content" id="tab-crypto">
+    <div class="input-panel" style="max-width: 1000px; margin: 0 auto;">
+      <h3 style="font-family: var(--font-display); color: var(--gold); margin-bottom: 0.5rem; font-weight: 300;">🪙 Cryptocurrency Astrology</h3>
+      <p style="color: var(--star-dim); font-size: 0.9rem; margin-bottom: 1.5rem;">Every coin has a genesis moment. Every genesis responds to transits. Cast any coin's natal chart.</p>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Left: Coin Selection -->
+        <div>
+          <div class="section-title" style="font-size: 0.85rem; color: var(--gold);"><span class="icon">₿</span>Select Cryptocurrency</div>
+          
+          <select id="crypto-coin-select" style="width:100%;padding:0.8rem;background:var(--nebula);color:var(--star-bright);border:1px solid var(--dust);border-radius:6px;font-size:0.95rem;font-family:var(--font-display);margin-bottom:1rem;cursor:pointer;">
+            <option value="BTC">₿ Bitcoin — Jan 3, 2009</option>
+            <option value="ETH">Ξ Ethereum — Jul 30, 2015</option>
+            <option value="SOL">◎ Solana — Mar 16, 2020</option>
+            <option value="ADA">♦ Cardano — Sep 23, 2017</option>
+            <option value="XRP">✕ XRP — Jun 2, 2012</option>
+            <option value="XMR">ɱ Monero — Apr 19, 2014 (rectified)</option>
+            <option value="DOGE">Ð Dogecoin — Dec 6, 2013</option>
+            <option value="LTC">Ł Litecoin — Oct 7, 2011</option>
+            <option value="DOT">● Polkadot — May 26, 2020</option>
+            <option value="AVAX">▲ Avalanche — Sep 21, 2020</option>
+            <option value="ATOM">⚛ Cosmos — Mar 14, 2019</option>
+            <option value="LINK">⬡ Chainlink — Sep 19, 2017</option>
+            <option value="UNI">🦄 Uniswap — Nov 2, 2018</option>
+            <option value="NEAR">Ⓝ NEAR — Apr 22, 2020</option>
+            <option value="ZEC">🛡 Zcash — Oct 28, 2016</option>
+            <option value="ETC">♦ Ethereum Classic — Jul 20, 2016</option>
+            <option value="BCH">₿ Bitcoin Cash — Aug 1, 2017</option>
+            <option value="FIL">⬢ Filecoin — Oct 15, 2020</option>
+            <option value="APT">◆ Aptos — Oct 12, 2022</option>
+            <option value="SUI">💧 Sui — May 3, 2023</option>
+            <option value="SHIB">🐕 Shiba Inu — Aug 1, 2020</option>
+            <option value="XLM">✦ Stellar — Jul 31, 2014</option>
+            <option value="TRX">◈ TRON — Jun 25, 2018</option>
+            <option value="AAVE">👻 Aave — Jan 8, 2020</option>
+            <option value="CUSTOM">✎ Custom coin...</option>
+          </select>
+          
+          <!-- Custom coin input (hidden by default) -->
+          <div id="custom-coin-form" style="display:none; padding:1rem; background:var(--deep); border:1px solid var(--gold-dim); border-radius:8px; margin-bottom:1rem;">
+            <div style="font-size:0.8rem; color:var(--gold); margin-bottom:0.8rem; font-weight:500;">Enter Genesis Data</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+              <div class="form-group" style="margin:0">
+                <label style="font-size:0.7rem;color:var(--star-dim);">Name</label>
+                <input type="text" id="custom-coin-name" placeholder="e.g. Dogecoin 2.0" style="width:100%;padding:0.5rem;background:var(--void);color:var(--star-bright);border:1px solid var(--dust);border-radius:4px;font-size:0.85rem;">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label style="font-size:0.7rem;color:var(--star-dim);">Symbol</label>
+                <input type="text" id="custom-coin-symbol" placeholder="e.g. DOGE2" style="width:100%;padding:0.5rem;background:var(--void);color:var(--star-bright);border:1px solid var(--dust);border-radius:4px;font-size:0.85rem;">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label style="font-size:0.7rem;color:var(--star-dim);">Genesis Date</label>
+                <input type="date" id="custom-coin-date" style="width:100%;padding:0.5rem;background:var(--void);color:var(--star-bright);border:1px solid var(--dust);border-radius:4px;font-size:0.85rem;">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label style="font-size:0.7rem;color:var(--star-dim);">Genesis Time (UTC)</label>
+                <input type="time" id="custom-coin-time" value="00:00" step="1" style="width:100%;padding:0.5rem;background:var(--void);color:var(--star-bright);border:1px solid var(--dust);border-radius:4px;font-size:0.85rem;">
+              </div>
+            </div>
+          </div>
+          
+          <button class="btn-compute" onclick="castCryptoChart()" style="width: 100%; background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: var(--void);">
+            Cast Coin's Natal Chart ✦
+          </button>
+        </div>
+        
+        <!-- Right: Analysis Options -->
+        <div>
+          <div class="section-title" style="font-size: 0.85rem; color: var(--gold);"><span class="icon">◐</span>Analysis Type</div>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; background: var(--nebula); border: 1px solid var(--dust); border-radius: 6px; cursor: pointer;">
+              <input type="radio" name="crypto-analysis" value="natal" checked style="accent-color: var(--gold);">
+              <div>
+                <div style="font-weight: 500;">Full Natal Chart</div>
+                <div style="font-size: 0.75rem; color: var(--star-dim);">Complete birth chart from genesis data</div>
+              </div>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; background: var(--nebula); border: 1px solid var(--dust); border-radius: 6px; cursor: pointer;">
+              <input type="radio" name="crypto-analysis" value="transits" style="accent-color: var(--gold);">
+              <div>
+                <div style="font-weight: 500;">Current Transits</div>
+                <div style="font-size: 0.75rem; color: var(--star-dim);">Active transits with exact dates &amp; durations</div>
+              </div>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; background: var(--nebula); border: 1px solid var(--dust); border-radius: 6px; cursor: pointer;">
+              <input type="radio" name="crypto-analysis" value="synastry" style="accent-color: var(--gold);">
+              <div>
+                <div style="font-weight: 500;">Person-to-Coin Synastry</div>
+                <div style="font-size: 0.75rem; color: var(--star-dim);">Your chart vs. this coin's chart</div>
+              </div>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem; background: var(--nebula); border: 1px solid var(--dust); border-radius: 6px; cursor: pointer;">
+              <input type="radio" name="crypto-analysis" value="compare" style="accent-color: var(--gold);">
+              <div>
+                <div style="font-weight: 500;">Compare All Coins</div>
+                <div style="font-size: 0.75rem; color: var(--star-dim);">Which coin aligns with YOUR chart?</div>
+              </div>
+            </label>
+          </div>
+          
+          <div id="crypto-synastry-notice" style="display: none; padding: 0.8rem; background: rgba(212, 168, 71, 0.1); border: 1px solid var(--gold-dim); border-radius: 6px; margin-bottom: 1rem;">
+            <p style="font-size: 0.8rem; color: var(--gold);">⚠️ Cast your natal chart first (in the Natal tab), then return here for synastry analysis.</p>
+          </div>
+          
+          <button class="btn-compute" onclick="runCryptoAnalysis()" style="width: 100%;">
+            Run Analysis ✦
+          </button>
+        </div>
+      </div>
+      
+      <!-- Results Area -->
+      <div id="crypto-results" style="margin-top: 2rem;"></div>
+      
+      <!-- AI Interpretation -->
+      <div id="crypto-ai-section" style="display: none; margin-top: 1.5rem;">
+        <button class="btn-action" onclick="requestCryptoInterpretation()" style="width: 100%; background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: var(--void);">
+          ✦ AI Crypto Interpretation
+        </button>
+        <div id="crypto-interpretation" style="display: none; margin-top: 1rem; padding: 1.5rem; background: linear-gradient(135deg, var(--deep), var(--nebula)); border: 1px solid var(--gold-dim); border-radius: 10px;">
+          <div id="crypto-interp-content" style="font-family: var(--font-display); font-size: 1rem; line-height: 1.7;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RECTIFICATION TAB ═══ -->
+  <div class="tab-content" id="tab-rectify">
+    <div class="input-panel" style="max-width: 900px; margin: 0 auto;">
+      <h3 style="font-family: var(--font-display); color: var(--ophiuchus); margin-bottom: 0.5rem; font-weight: 300;">⚕ Birth Time Rectification</h3>
+      <p style="color: var(--star-dim); font-size: 0.9rem; margin-bottom: 1.5rem;">Deduce unknown birth time using life events. Enter at least 3 significant events.</p>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Left Column: Birth Info -->
+        <div>
+          <div class="section-title" style="font-size: 0.85rem;"><span class="icon">◐</span>Birth Information</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Birth Date</label><input type="date" id="rect-date"></div>
+            <div class="form-group"><label>Latitude</label><input type="text" id="rect-lat" placeholder="41.5868"></div>
+            <div class="form-group"><label>Longitude</label><input type="text" id="rect-lon" placeholder="-93.6250"></div>
+            <div class="form-group"><label>UTC Offset</label><input type="text" id="rect-tz" placeholder="-6"></div>
+          </div>
+          
+          <div class="section-title" style="font-size: 0.85rem; margin-top: 1.5rem;"><span class="icon">◔</span>Search Time Range</div>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <select id="rect-range-preset" onchange="toggleRectCustomTime()" style="width: 100%; background: var(--deep); border: 1px solid var(--dust); border-radius: 6px; color: var(--star-bright); padding: 0.6rem;">
+                <option value="all_day">All Day (12 AM - 11:59 PM)</option>
+                <option value="morning">Morning (6 AM - 12 PM)</option>
+                <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
+                <option value="evening">Evening (6 PM - 12 AM)</option>
+                <option value="night">Night (12 AM - 6 AM)</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+            <div class="form-group" id="rect-custom-times" style="display: none; grid-column: 1 / -1;">
+              <div style="display: flex; gap: 1rem; align-items: center;">
+                <input type="time" id="rect-start" value="06:00" style="flex: 1;">
+                <span style="color: var(--star-dim);">to</span>
+                <input type="time" id="rect-end" value="12:00" style="flex: 1;">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right Column: Events -->
+        <div>
+          <div class="section-title" style="font-size: 0.85rem;"><span class="icon">✧</span>Life Events (3-10)</div>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input type="date" id="evt-date" style="flex: 1;">
+            <select id="evt-type" style="flex: 1; background: var(--deep); border: 1px solid var(--dust); border-radius: 6px; color: var(--star-bright); padding: 0.5rem;">
+              <option value="marriage">Marriage</option>
+              <option value="divorce">Divorce</option>
+              <option value="career_change">Career Change</option>
+              <option value="job_loss">Job Loss</option>
+              <option value="promotion">Promotion</option>
+              <option value="accident">Accident/Injury</option>
+              <option value="surgery">Surgery</option>
+              <option value="death_parent">Death of Parent</option>
+              <option value="death_sibling">Death of Sibling</option>
+              <option value="child_born">Child Born</option>
+              <option value="relocation">Major Move</option>
+              <option value="windfall">Financial Windfall</option>
+              <option value="health_crisis">Health Crisis</option>
+            </select>
+            <button class="btn-action" onclick="addRectEvent()">+ Add</button>
+          </div>
+          <div id="rect-event-list" style="max-height: 250px; overflow-y: auto;"></div>
+        </div>
+      </div>
+      
+      <button class="btn-compute" style="margin-top: 1.5rem; width: 100%;" onclick="runRectification()">⚕ Find Probable Birth Times</button>
+    </div>
+    
+    <div class="spinner" id="rect-spinner" style="display: none;">Testing candidate times... this may take a moment.</div>
+    <div id="rect-results" style="max-width: 900px; margin: 2rem auto;"></div>
+  </div>
+
+  <!-- ═══ ABOUT TAB ═══ -->
+  <div class="tab-content" id="tab-about">
+    <div style="max-width:720px; margin:0 auto;">
+      <div class="section-title" style="text-align:center;">What This Tool Does</div>
+      <div style="font-family: var(--font-display); font-size:1.08rem; line-height:1.8; color: var(--star-bright); margin-bottom:2rem;">
+        <p style="margin-bottom:1.2rem;">
+          Stellaris-13 computes natal charts using <em>two independent methods</em> for mapping planets to the 13 astronomical constellations recognized by the IAU, including Ophiuchus.
+        </p>
+        <p style="margin-bottom:1.2rem;">
+          <strong style="color: var(--ophiuchus);">Standard 13-Sign</strong> maps tropical longitude to unequal constellation spans derived from the IAU date ranges. This is the method used by most 13-sign astrologers.
+        </p>
+        <p style="margin-bottom:1.2rem;">
+          <strong style="color: var(--iau-blue);">IAU Astronomical</strong> uses J2000.0 constellation boundaries with precession correction, matching rigorous astronomical calculations. <em>This precision implementation is unique to Stellaris-13.</em>
+        </p>
+        <p style="margin-bottom:1.2rem;">
+          Planetary positions are computed using the Swiss Ephemeris (pyswisseph), the same engine used by professional astronomy software worldwide.
+        </p>
+      </div>
+
+      <div class="section-title" style="text-align:center;">The 13 Constellations</div>
+      <table class="placement-table" style="max-width:500px; margin:0 auto 2rem;">
+        <thead><tr>
+          <th>Constellation</th><th>Approx. Dates</th><th>Days</th>
+        </tr></thead>
+        <tbody style="font-family: var(--font-mono); font-size:0.82rem;">
+          <tr><td>♑ Capricorn</td><td>Jan 20 – Feb 16</td><td>28</td></tr>
+          <tr><td>♒ Aquarius</td><td>Feb 16 – Mar 11</td><td>24</td></tr>
+          <tr><td>♓ Pisces</td><td>Mar 11 – Apr 18</td><td>38</td></tr>
+          <tr><td>♈ Aries</td><td>Apr 18 – May 13</td><td>25</td></tr>
+          <tr><td>♉ Taurus</td><td>May 13 – Jun 21</td><td>39</td></tr>
+          <tr><td>♊ Gemini</td><td>Jun 21 – Jul 20</td><td>29</td></tr>
+          <tr><td>♋ Cancer</td><td>Jul 20 – Aug 10</td><td>21</td></tr>
+          <tr><td>♌ Leo</td><td>Aug 10 – Sep 16</td><td>37</td></tr>
+          <tr><td>♍ Virgo</td><td>Sep 16 – Oct 30</td><td>44</td></tr>
+          <tr><td>♎ Libra</td><td>Oct 30 – Nov 23</td><td>24</td></tr>
+          <tr><td>♏ Scorpio</td><td>Nov 23 – Nov 29</td><td style="color:var(--retro-red);">6</td></tr>
+          <tr><td style="color:var(--ophiuchus);">⛎ Ophiuchus</td><td>Nov 29 – Dec 17</td><td>18</td></tr>
+          <tr><td>♐ Sagittarius</td><td>Dec 17 – Jan 20</td><td>34</td></tr>
+        </tbody>
+      </table>
+
+      <!-- About the Founder Section -->
+      <div class="section-title" style="text-align:center; color: var(--ophiuchus);">About the Founder</div>
+      <div style="font-family: var(--font-display); font-size:1rem; line-height:1.8; color: var(--star-bright); margin-bottom:2rem; padding: 1.5rem; background: var(--nebula); border-radius: 10px; border: 1px solid var(--ophiuchus-dim);">
+        <p style="margin-bottom:1rem; text-align:center;">
+          <strong style="color: var(--gold); font-size: 1.2rem;">TAO</strong><br>
+          <span style="color: var(--star-mid); font-size: 0.9rem;">December 12, 1985 · 10:47 AM · Des Moines, Iowa</span>
+        </p>
+        <p style="margin-bottom:1rem;">
+          Born with <strong style="color: var(--ophiuchus);">Sun, Venus, and Uranus in Ophiuchus</strong> — the 13th constellation that mainstream astrology excludes.
+        </p>
+        <p style="margin-bottom:1rem;">
+          The incarnation window opened with a <strong>Total Lunar Eclipse</strong> (45 days before), aligned with <strong>Halley's Comet</strong> approaching perihelion (once every 76 years), at the peak of the <strong>Geminid meteor shower</strong>, precisely <strong>13 hours 13 minutes</strong> before Friday the 13th.
+        </p>
+        <p style="margin-bottom:1rem; font-style: italic; color: var(--star-mid);">
+          "When you're born with the Sun in the constellation mainstream astrology pretends doesn't exist, you build the tool that includes it."
+        </p>
+        <details style="margin-top: 1rem;">
+          <summary style="cursor: pointer; color: var(--gold); font-size: 0.85rem;">View Full Birth Signature ▼</summary>
+          <pre style="margin-top: 1rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--star-dim); overflow-x: auto;">
+╔══════════════════════════════════════════════════════════════╗
+║                  THE ENTRY SEQUENCE                          ║
+╠══════════════════════════════════════════════════════════════╣
+║   Oct 28   ────►  TOTAL LUNAR ECLIPSE (portal opens)        ║
+║   Nov 12   ────►  New Moon (30 days before birth)           ║
+║   Dec 12   ════►  BIRTH · Ophiuchus Stellium · Halley's     ║
+║   Dec 13   ────►  Friday the 13th (13h 13m after birth)     ║
+║   Feb 9    ────►  Halley's Comet perihelion                 ║
+╚══════════════════════════════════════════════════════════════╝
+          </pre>
+        </details>
+      </div>
+
+      <!-- Disclaimer Section -->
+      <div style="background: var(--void); border: 1px solid var(--dust); border-radius: 8px; padding: 1.2rem; margin-bottom: 2rem;">
+        <div style="font-size: 0.8rem; color: var(--star-dim); text-align: center;">
+          <strong style="color: var(--retro-red);">⚠ DISCLAIMER</strong><br><br>
+          Stellaris-13 is provided for <strong>entertainment, educational, and personal insight purposes only</strong>.<br>
+          This is not medical, legal, financial, or psychological advice.<br>
+          AI-generated interpretations are not reviewed by human astrologers.<br><br>
+          <a href="#" onclick="showLegalModal('terms')" style="color: var(--gold);">Terms of Service</a> · 
+          <a href="#" onclick="showLegalModal('privacy')" style="color: var(--gold);">Privacy Policy</a> · 
+          <a href="#" onclick="showLegalModal('accessibility')" style="color: var(--gold);">Accessibility</a>
+        </div>
+      </div>
+
+      <div style="text-align:center; padding:2rem 0; font-family: var(--font-display); font-style:italic; color:var(--star-dim); font-size:0.95rem;">
+        Built at the Forge — Reno, NV<br>
+        Stellaris-13 v2.4<br>
+        <span style="font-size: 0.8rem;">GNU AGPL v3.0 · Swiss Ephemeris · IAU Boundaries</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Consent Banner -->
+<div id="consent-banner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--deep); border-top: 1px solid var(--gold-dim); padding: 1rem 2rem; z-index: 9999;">
+  <div style="max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div style="flex: 1; min-width: 300px; font-size: 0.85rem; color: var(--star-bright);">
+      <strong>🍪 Storage Notice:</strong> This site uses browser storage to save your charts and API keys locally. We don't collect or transmit personal data. 
+      <a href="#" onclick="showLegalModal('privacy')" style="color: var(--gold);">Learn more</a>
+    </div>
+    <div style="display: flex; gap: 0.8rem;">
+      <button onclick="acceptConsent()" style="background: var(--gold); color: var(--void); border: none; padding: 0.6rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 500;">Accept</button>
+      <button onclick="declineConsent()" style="background: transparent; color: var(--star-mid); border: 1px solid var(--dust); padding: 0.6rem 1.5rem; border-radius: 6px; cursor: pointer;">Decline</button>
+    </div>
+  </div>
+</div>
+
+<!-- Legal Modal -->
+<div id="legal-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 10000; overflow-y: auto;">
+  <div style="max-width: 800px; margin: 2rem auto; background: var(--deep); border: 1px solid var(--dust); border-radius: 12px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 id="legal-modal-title" style="font-family: var(--font-display); color: var(--gold); margin: 0;"></h2>
+      <button onclick="closeLegalModal()" style="background: none; border: none; color: var(--star-mid); font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="legal-modal-content" style="font-family: var(--font-body); font-size: 0.9rem; line-height: 1.7; color: var(--star-bright); max-height: 70vh; overflow-y: auto;"></div>
+  </div>
+</div>
+
+<script>
+// ═══ STATE ═══
+let currentChart = null;
+let currentMethod = 'dual'; // 'standard', 'iau', 'dual'
+
+// ═══ TABS ═══
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ═══ METHOD TOGGLE ═══
+function setMethod(method, btn) {
+  currentMethod = method;
+  document.querySelectorAll('.method-btn').forEach(b => {
+    b.classList.remove('active-standard', 'active-iau', 'active-dual');
+  });
+  btn.classList.add('active-' + method);
+  if (currentChart) renderChart(currentChart);
+}
+
+// ═══ COMPUTE ═══
+async function computeChart() {
+  const btn = document.getElementById('btn-compute');
+  const spinner = document.getElementById('spinner');
+  const results = document.getElementById('results');
+  
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  results.style.display = 'none';
+  
+  const data = {
+    name: document.getElementById('name').value || 'Chart',
+    date: document.getElementById('date').value,
+    time: document.getElementById('time').value,
+    lat: document.getElementById('lat').value,
+    lon: document.getElementById('lon').value,
+    tz: document.getElementById('tz').value,
+  };
+  
+  try {
+    const resp = await fetch('/compute', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    });
+    const result = await resp.json();
+    
+    if (result.status === 'ok') {
+      currentChart = result.chart;
+      renderChart(result.chart);
+      results.style.display = 'block';
+      results.classList.add('fade-in');
+    } else {
+      alert('Error: ' + result.message);
+    }
+  } catch (e) {
+    alert('Connection error: ' + e.message);
+  }
+  
+  btn.disabled = false;
+  spinner.style.display = 'none';
+}
+
+// ═══ RENDER ═══
+function fmtDeg(d) {
+  const deg = Math.floor(d);
+  const min = Math.floor((d - deg) * 60);
+  return deg + '°' + String(min).padStart(2, '0') + "'";
+}
+
+function makeHeaders() {
+  const dual = currentMethod === 'dual';
+  const std = currentMethod === 'standard' || dual;
+  const iau = currentMethod === 'iau' || dual;
+  
+  let h = '<tr><th>Body</th><th>Tropical</th>';
+  if (std) h += '<th style="color:var(--ophiuchus)">Standard 13-Sign</th>';
+  if (iau) h += '<th style="color:var(--iau-blue)">IAU Astronomical</th>';
+  h += '<th>House</th></tr>';
+  return h;
+}
+
+function makeRow(name, p, showHouse) {
+  const dual = currentMethod === 'dual';
+  const std = currentMethod === 'standard' || dual;
+  const iau = currentMethod === 'iau' || dual;
+  
+  const retro = p.retrograde ? '<span class="retro">℞</span>' : '';
+  
+  // Check shifts
+  const tropName = p.tropical_sign;
+  const stdName = p.standard_constellation;
+  const iauName = p.iau_constellation;
+  
+  function isShifted(constel, trop) {
+    if (constel === trop) return false;
+    if (trop === 'Scorpio' && (constel === 'Scorpius' || constel === 'Scorpio')) return false;
+    if (trop === 'Capricorn' && (constel === 'Capricornus' || constel === 'Capricorn')) return false;
+    return true;
+  }
+  
+  let row = `<tr>`;
+  row += `<td class="body-name">${name}${retro}</td>`;
+  row += `<td class="tropical-cell">${p.tropical_symbol} ${p.tropical_sign} ${fmtDeg(p.tropical_degree)}</td>`;
+  
+  if (std) {
+    const shifted = isShifted(stdName, tropName);
+    row += `<td class="constellation-cell standard-col">`;
+    row += `<span class="constellation-symbol">${p.standard_symbol}</span>`;
+    row += `${stdName} ${fmtDeg(p.standard_degree)}`;
+    if (shifted) row += `<span class="shifted-marker shifted-standard"></span>`;
+    row += `</td>`;
+  }
+  
+  if (iau) {
+    const shifted = isShifted(iauName, tropName);
+    row += `<td class="constellation-cell iau-col">`;
+    row += `<span class="constellation-symbol">${p.iau_symbol}</span>`;
+    row += `${iauName} ${fmtDeg(p.iau_degree)}`;
+    if (shifted) row += `<span class="shifted-marker shifted-iau"></span>`;
+    row += `</td>`;
+  }
+  
+  if (showHouse) {
+    row += `<td class="house-cell">H${p.house}</td>`;
+  } else {
+    row += `<td class="house-cell">—</td>`;
+  }
+  
+  row += `</tr>`;
+  return row;
+}
+
+function renderChart(chart) {
+  // Header
+  const bd = chart.birth_data;
+  const sectClass = chart.sect === 'Day' ? 'sect-day' : 'sect-night';
+  document.getElementById('chart-header').innerHTML = `
+    <div class="chart-name">${chart.name}</div>
+    <div class="chart-meta">
+      ${bd.year}-${String(bd.month).padStart(2,'0')}-${String(bd.day).padStart(2,'0')}
+      &ensp;${String(bd.hour).padStart(2,'0')}:${String(bd.minute).padStart(2,'0')}:${String(bd.second).padStart(2,'0')}
+      &ensp;UTC${bd.tz_offset >= 0 ? '+' : ''}${bd.tz_offset}
+      &ensp;·&ensp;${bd.lat.toFixed(4)}°, ${bd.lon.toFixed(4)}°
+      &ensp;·&ensp;Ayanamsa: ${bd.ayanamsa}°
+      <span class="sect-badge ${sectClass}">${chart.sect}</span>
+    </div>
+  `;
+  
+  // Headers
+  const th = makeHeaders();
+  document.getElementById('angles-thead').innerHTML = th;
+  document.getElementById('planets-thead').innerHTML = th;
+  document.getElementById('points-thead').innerHTML = th;
+  
+  // Angles
+  let ab = '';
+  for (const [n, a] of Object.entries(chart.angles)) {
+    ab += makeRow(n, a, false);
+  }
+  document.getElementById('angles-body').innerHTML = ab;
+  
+  // Planets
+  const majorOrder = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  let pb = '';
+  for (const n of majorOrder) {
+    if (chart.placements[n]) pb += makeRow(n, chart.placements[n], true);
+  }
+  document.getElementById('planets-body').innerHTML = pb;
+  
+  // Points
+  const minorOrder = ['North Node','South Node','Chiron','Ceres','Pallas','Juno','Vesta',
+                      'Pars Fortuna','Part of Spirit','Lilith','East Point'];
+  let ptb = '';
+  for (const n of minorOrder) {
+    if (chart.placements[n]) ptb += makeRow(n, chart.placements[n], true);
+  }
+  document.getElementById('points-body').innerHTML = ptb;
+  
+  // Shifts
+  const allBodies = [...majorOrder, ...minorOrder, ...Object.keys(chart.angles)];
+  const allPlacements = {...chart.placements, ...chart.angles};
+  let shifts = '';
+  
+  function isShifted(constel, trop) {
+    if (constel === trop) return false;
+    if (trop === 'Scorpio' && (constel === 'Scorpius' || constel === 'Scorpio')) return false;
+    if (trop === 'Capricorn' && (constel === 'Capricornus' || constel === 'Capricorn')) return false;
+    return true;
+  }
+  
+  for (const n of allBodies) {
+    const p = allPlacements[n];
+    if (!p) continue;
+    
+    const stdShift = isShifted(p.standard_constellation, p.tropical_sign);
+    const iauShift = isShifted(p.iau_constellation, p.tropical_sign);
+    
+    if (stdShift || iauShift) {
+      let detail = '';
+      if (currentMethod === 'dual' || currentMethod === 'standard') {
+        if (stdShift) detail += `<span class="shift-new-standard">${p.standard_symbol} ${p.standard_constellation}</span>`;
+      }
+      if (currentMethod === 'dual' && stdShift && iauShift) detail += ' <span class="shift-arrow">/</span> ';
+      if (currentMethod === 'dual' || currentMethod === 'iau') {
+        if (iauShift) detail += `<span class="shift-new-iau">${p.iau_symbol} ${p.iau_constellation}</span>`;
+      }
+      
+      if (detail) {
+        shifts += `<tr>
+          <td class="body-name" style="min-width:110px">${n}</td>
+          <td class="tropical-cell">${p.tropical_sign}</td>
+          <td style="text-align:center;color:var(--gold-dim);font-size:0.8rem;">→</td>
+          <td class="constellation-cell">${detail}</td>
+        </tr>`;
+      }
+    }
+  }
+  
+  document.getElementById('shift-list').innerHTML = shifts || '<tr><td colspan="4" style="color:var(--star-dim);font-style:italic;text-align:center;padding:1rem;">No constellation shifts detected.</td></tr>';
+  
+  // Aspects
+  let asp = '';
+  const maxAspects = 25;
+  for (let i = 0; i < Math.min(chart.aspects.length, maxAspects); i++) {
+    const a = chart.aspects[i];
+    asp += `<div class="aspect-row">
+      <div class="aspect-body1">${a.body1}</div>
+      <div class="aspect-glyph asp-${a.abbr}">${a.abbr}</div>
+      <div class="aspect-body2">${a.body2}</div>
+      <div class="aspect-orb">${a.orb.toFixed(2)}°</div>
+    </div>`;
+  }
+  if (chart.aspects.length > maxAspects) {
+    asp += `<div style="text-align:center;color:var(--star-dim);padding:0.5rem;font-size:0.82rem;">
+      + ${chart.aspects.length - maxAspects} more aspects
+    </div>`;
+  }
+  document.getElementById('aspects-list').innerHTML = asp;
+}
+
+// ═══ SYNASTRY ═══
+async function computeSynastry() {
+  const spinner = document.getElementById('syn-spinner');
+  spinner.style.display = 'block';
+  document.getElementById('syn-results').innerHTML = '';
+  
+  const data = {
+    chart1: {
+      name: document.getElementById('s1-name').value || 'Person A',
+      date: document.getElementById('s1-date').value,
+      time: document.getElementById('s1-time').value,
+      lat: document.getElementById('s1-lat').value,
+      lon: document.getElementById('s1-lon').value,
+      tz: document.getElementById('s1-tz').value,
+    },
+    chart2: {
+      name: document.getElementById('s2-name').value || 'Person B',
+      date: document.getElementById('s2-date').value,
+      time: document.getElementById('s2-time').value,
+      lat: document.getElementById('s2-lat').value,
+      lon: document.getElementById('s2-lon').value,
+      tz: document.getElementById('s2-tz').value,
+    },
+  };
+  
+  try {
+    const resp = await fetch('/synastry', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    });
+    const result = await resp.json();
+    
+    if (result.status === 'ok') {
+      // Store for AI interpretation
+      currentSynastryData = result;
+      
+      let html = `<div class="chart-header" style="margin-top:2rem;">
+        <div class="chart-name">${result.chart1.name} ↔ ${result.chart2.name}</div>
+        <div class="chart-meta">Inter-chart aspects (tightest first)</div>
+      </div>`;
+      
+      html += '<div class="aspects-section">';
+      const aspects = result.synastry.slice(0, 30);
+      
+      for (let i = 0; i < aspects.length; i++) {
+        const a = result.synastry[i];
+        const p1 = result.chart1.placements[a.body1];
+        const p2 = result.chart2.placements[a.body2];
+        const h1 = p1?.house || '';
+        const h2 = p2?.house || '';
+        
+        html += `<div class="aspect-row">
+          <div class="aspect-body1">${a.body1}${h1 ? ` <span style="color:var(--star-dim);font-size:0.68rem;">H${h1}</span>` : ''} <span style="color:var(--star-dim);font-size:0.7rem;">(${a.chart1})</span></div>
+          <div class="aspect-glyph asp-${a.abbr}">${a.abbr}</div>
+          <div class="aspect-body2">${a.body2}${h2 ? ` <span style="color:var(--star-dim);font-size:0.68rem;">H${h2}</span>` : ''} <span style="color:var(--star-dim);font-size:0.7rem;">(${a.chart2})</span></div>
+          <div class="aspect-orb">${a.orb.toFixed(2)}°</div>
+        </div>`;
+      }
+      
+      if (result.synastry.length > 30) {
+        html += `<button class="expand-btn" onclick="expandSynastryAspects()">Show All ${result.synastry.length} Aspects ▼</button>`;
+      }
+      
+      html += '</div>';
+      
+      document.getElementById('syn-results').innerHTML = html;
+      
+      // Show AI section
+      document.getElementById('synastry-ai-section').style.display = 'block';
+    } else {
+      alert('Error: ' + result.message);
+    }
+  } catch (e) {
+    alert('Connection error: ' + e.message);
+  }
+  
+  spinner.style.display = 'none';
+}
+
+function expandSynastryAspects() {
+  if (!currentSynastryData) return;
+  
+  let html = '<div class="aspects-section">';
+  
+  currentSynastryData.synastry.forEach(a => {
+    const p1 = currentSynastryData.chart1.placements[a.body1];
+    const p2 = currentSynastryData.chart2.placements[a.body2];
+    const h1 = p1?.house || '';
+    const h2 = p2?.house || '';
+    
+    html += `<div class="aspect-row">
+      <div class="aspect-body1">${a.body1}${h1 ? ` <span style="color:var(--star-dim);font-size:0.68rem;">H${h1}</span>` : ''} <span style="color:var(--star-dim);font-size:0.7rem;">(${a.chart1})</span></div>
+      <div class="aspect-glyph asp-${a.abbr}">${a.abbr}</div>
+      <div class="aspect-body2">${a.body2}${h2 ? ` <span style="color:var(--star-dim);font-size:0.68rem;">H${h2}</span>` : ''} <span style="color:var(--star-dim);font-size:0.7rem;">(${a.chart2})</span></div>
+      <div class="aspect-orb">${a.orb.toFixed(2)}°</div>
+    </div>`;
+  });
+  
+  html += '</div>';
+  
+  document.getElementById('syn-results').innerHTML = `
+    <div class="chart-header" style="margin-top:2rem;">
+      <div class="chart-name">${currentSynastryData.chart1.name} ↔ ${currentSynastryData.chart2.name}</div>
+      <div class="chart-meta">All ${currentSynastryData.synastry.length} inter-chart aspects</div>
+    </div>
+    ${html}
+  `;
+}
+
+// ═══ KEYBOARD SHORTCUT ═══
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('tab-natal').classList.contains('active')) {
+    computeChart();
+  }
+});
+
+// ═══ CHART WHEEL GENERATION ═══
+const CONSTELLATION_DATA = [
+  { name: 'Aries', symbol: '♈', start: 28.75, span: 24.27, color: '#e74c3c' },
+  { name: 'Taurus', symbol: '♉', start: 53.02, span: 37.39, color: '#27ae60' },
+  { name: 'Gemini', symbol: '♊', start: 90.41, span: 27.65, color: '#f39c12' },
+  { name: 'Cancer', symbol: '♋', start: 118.06, span: 20.09, color: '#3498db' },
+  { name: 'Leo', symbol: '♌', start: 138.15, span: 35.77, color: '#e74c3c' },
+  { name: 'Virgo', symbol: '♍', start: 173.92, span: 43.45, color: '#27ae60' },
+  { name: 'Libra', symbol: '♎', start: 217.37, span: 24.13, color: '#f39c12' },
+  { name: 'Scorpio', symbol: '♏', start: 241.50, span: 6.08, color: '#3498db' },
+  { name: 'Ophiuchus', symbol: '⛎', start: 247.58, span: 18.28, color: '#9b59b6' },
+  { name: 'Sagittarius', symbol: '♐', start: 265.86, span: 33.87, color: '#e74c3c' },
+  { name: 'Capricorn', symbol: '♑', start: 299.73, span: 27.39, color: '#27ae60' },
+  { name: 'Aquarius', symbol: '♒', start: 327.12, span: 24.10, color: '#f39c12' },
+  { name: 'Pisces', symbol: '♓', start: 351.22, span: 37.53, color: '#3498db' },
+];
+
+function generateChartWheel(chart) {
+  const cx = 260, cy = 260, outerR = 240, innerR = 140, planetR = 190;
+  const showAspectLines = document.getElementById('show-aspect-lines')?.checked || false;
+  const showDegreeMarks = document.getElementById('show-degree-marks')?.checked !== false;
+  const showHouseNumbers = document.getElementById('show-house-numbers')?.checked !== false;
+  
+  let svg = `<svg class="wheel-svg" viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg">`;
+  
+  // Background
+  svg += `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="var(--void)" stroke="var(--dust)" stroke-width="1"/>`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="${innerR}" fill="var(--deep)" stroke="var(--dust)" stroke-width="1"/>`;
+  
+  // Constellation segments (unequal!)
+  CONSTELLATION_DATA.forEach((c, i) => {
+    const startAngle = (c.start - 90) * Math.PI / 180;
+    const endAngle = ((c.start + c.span) - 90) * Math.PI / 180;
+    
+    const x1 = cx + outerR * Math.cos(startAngle);
+    const y1 = cy + outerR * Math.sin(startAngle);
+    const x2 = cx + outerR * Math.cos(endAngle);
+    const y2 = cy + outerR * Math.sin(endAngle);
+    const x3 = cx + innerR * Math.cos(endAngle);
+    const y3 = cy + innerR * Math.sin(endAngle);
+    const x4 = cx + innerR * Math.cos(startAngle);
+    const y4 = cy + innerR * Math.sin(startAngle);
+    
+    const largeArc = c.span > 180 ? 1 : 0;
+    
+    svg += `<path class="wheel-segment wheel-segment-standard" 
+      d="M${x1},${y1} A${outerR},${outerR} 0 ${largeArc},1 ${x2},${y2} L${x3},${y3} A${innerR},${innerR} 0 ${largeArc},0 ${x4},${y4} Z"
+      fill="rgba(${c.name === 'Ophiuchus' ? '155,89,182' : '100,100,140'},0.1)"
+      stroke="${c.name === 'Ophiuchus' ? 'var(--ophiuchus)' : 'var(--dust)'}" stroke-width="1"/>`;
+    
+    // Constellation symbol
+    const midAngle = ((c.start + c.span/2) - 90) * Math.PI / 180;
+    const labelR = (outerR + innerR) / 2;
+    const lx = cx + labelR * Math.cos(midAngle);
+    const ly = cy + labelR * Math.sin(midAngle);
+    
+    svg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" 
+      fill="${c.name === 'Ophiuchus' ? 'var(--ophiuchus)' : 'var(--star-dim)'}" 
+      font-size="16">${c.symbol}</text>`;
+  });
+  
+  // Degree marks
+  if (showDegreeMarks) {
+    for (let d = 0; d < 360; d += 10) {
+      const angle = (d - 90) * Math.PI / 180;
+      const x1 = cx + outerR * Math.cos(angle);
+      const y1 = cy + outerR * Math.sin(angle);
+      const x2 = cx + (outerR - 5) * Math.cos(angle);
+      const y2 = cy + (outerR - 5) * Math.sin(angle);
+      svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--dust)" stroke-width="1"/>`;
+    }
+  }
+  
+  // Plot planets
+  const placements = chart.placements || {};
+  const planetSymbols = {
+    'Sun': '☉', 'Moon': '☽', 'Mercury': '☿', 'Venus': '♀', 'Mars': '♂',
+    'Jupiter': '♃', 'Saturn': '♄', 'Uranus': '♅', 'Neptune': '♆', 'Pluto': '♇',
+    'North Node': '☊', 'South Node': '☋', 'Chiron': '⚷',
+  };
+  
+  const majorBodies = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'];
+  let planetPositions = {};
+  let plotted = [];
+  
+  majorBodies.forEach(name => {
+    const p = placements[name];
+    if (!p) return;
+    
+    let lon = p.tropical_longitude;
+    // Nudge if too close to another planet
+    plotted.forEach(prev => {
+      if (Math.abs(lon - prev) < 8) lon += 6;
+    });
+    plotted.push(p.tropical_longitude);
+    
+    const angle = (lon - 90) * Math.PI / 180;
+    const px = cx + planetR * Math.cos(angle);
+    const py = cy + planetR * Math.sin(angle);
+    
+    planetPositions[name] = { x: px, y: py, lon: p.tropical_longitude };
+    
+    const sym = planetSymbols[name] || '•';
+    const isOph = p.standard_constellation === 'Ophiuchus';
+    
+    svg += `<circle cx="${px}" cy="${py}" r="14" fill="${isOph ? 'var(--ophiuchus-dim)' : 'var(--nebula)'}" stroke="${isOph ? 'var(--ophiuchus)' : 'var(--gold-dim)'}" stroke-width="1"/>`;
+    svg += `<text x="${px}" y="${py}" text-anchor="middle" dominant-baseline="middle" fill="${isOph ? 'var(--ophiuchus)' : 'var(--gold)'}" font-size="14">${sym}</text>`;
+    
+    // House number next to planet
+    if (showHouseNumbers && p.house) {
+      svg += `<text x="${px + 12}" y="${py + 12}" fill="var(--star-dim)" font-size="8">H${p.house}</text>`;
+    }
+    
+    // Retrograde marker
+    if (p.retrograde) {
+      svg += `<text x="${px + 10}" y="${py - 10}" fill="var(--retro-red)" font-size="10">℞</text>`;
+    }
+  });
+  
+  // Aspect lines
+  if (showAspectLines && chart.aspects) {
+    const aspectColors = {
+      'CON': '#e74c3c', 'OPP': '#c0392b', 'TRI': '#2ecc71',
+      'SQR': '#e67e22', 'SEX': '#3498db', 'QUI': '#9b59b6'
+    };
+    
+    chart.aspects.slice(0, 15).forEach(asp => {
+      const p1 = planetPositions[asp.body1];
+      const p2 = planetPositions[asp.body2];
+      if (p1 && p2) {
+        const color = aspectColors[asp.abbr] || 'var(--star-dim)';
+        const opacity = Math.max(0.2, 1 - asp.orb / 8);
+        svg += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" 
+          stroke="${color}" stroke-width="1" opacity="${opacity}"/>`;
+      }
+    });
+  }
+  
+  // ASC/MC markers
+  const angles = chart.angles || {};
+  if (angles.Ascendant) {
+    const ascAngle = (angles.Ascendant.tropical_longitude - 90) * Math.PI / 180;
+    const ax = cx + outerR * Math.cos(ascAngle);
+    const ay = cy + outerR * Math.sin(ascAngle);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${ax}" y2="${ay}" stroke="var(--gold)" stroke-width="2"/>`;
+    svg += `<text x="${ax + 15 * Math.cos(ascAngle)}" y="${ay + 15 * Math.sin(ascAngle)}" fill="var(--gold)" font-size="11" font-weight="bold">ASC</text>`;
+  }
+  
+  if (angles.MC) {
+    const mcAngle = (angles.MC.tropical_longitude - 90) * Math.PI / 180;
+    const mx = cx + outerR * Math.cos(mcAngle);
+    const my = cy + outerR * Math.sin(mcAngle);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="var(--iau-blue)" stroke-width="2"/>`;
+    svg += `<text x="${mx + 15 * Math.cos(mcAngle)}" y="${my + 15 * Math.sin(mcAngle)}" fill="var(--iau-blue)" font-size="11" font-weight="bold">MC</text>`;
+  }
+  
+  svg += `</svg>`;
+  return svg;
+}
+
+// ═══ SYZYGY DISPLAY ═══
+function renderSyzygy(chart) {
+  const syz = chart.syzygy;
+  const section = document.getElementById('syzygy-section');
+  const display = document.getElementById('syzygy-display');
+  
+  if (!syz) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  section.style.display = 'block';
+  display.innerHTML = `
+    <div style="color: var(--gold);">${syz.type}</div>
+    <div style="margin-top: 0.5rem;">
+      Date: ${syz.year}-${String(syz.month).padStart(2,'0')}-${String(syz.day).padStart(2,'0')}
+    </div>
+    <div style="margin-top: 0.3rem;">
+      <span style="color: var(--ophiuchus);">13-Sign:</span> ${syz.standard_symbol} ${syz.standard_constellation} ${fmtDeg(syz.standard_degree)}
+    </div>
+    <div style="margin-top: 0.3rem;">
+      <span style="color: var(--star-dim);">Tropical:</span> ${syz.tropical_symbol} ${syz.tropical_sign} ${fmtDeg(syz.tropical_degree)}
+    </div>
+  `;
+}
+
+// ═══ DOWNLOAD/LOAD ═══
+async function downloadChart() {
+  if (!currentChart) {
+    alert('No chart to download. Cast a chart first.');
+    return;
+  }
+  
+  const blob = new Blob([JSON.stringify(currentChart, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${currentChart.name.replace(/\s/g, '_')}_stellaris13.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadChartFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const chart = JSON.parse(e.target.result);
+      
+      // Backward compatibility: normalize old chart formats
+      if (!chart.birth_data && chart.birthData) {
+        chart.birth_data = chart.birthData;
+      }
+      
+      // Handle various field name variations
+      if (chart.birth_data) {
+        const bd = chart.birth_data;
+        // Normalize timezone field
+        if (bd.tz !== undefined && bd.tz_offset === undefined) bd.tz_offset = bd.tz;
+        if (bd.timezone !== undefined && bd.tz_offset === undefined) bd.tz_offset = bd.timezone;
+        // Normalize second field
+        if (bd.second === undefined) bd.second = bd.sec || 0;
+        // Normalize lat/lon
+        if (bd.latitude !== undefined) bd.lat = bd.latitude;
+        if (bd.longitude !== undefined) bd.lon = bd.longitude;
+      }
+      
+      currentChart = chart;
+      
+      // Save to profiles for reuse
+      saveProfile(chart);
+      
+      // Try to render - if placements exist
+      if (chart.placements) {
+        renderChart(chart);
+        document.getElementById('results').style.display = 'block';
+      }
+      
+      // Populate form fields
+      if (chart.birth_data) {
+        const bd = chart.birth_data;
+        document.getElementById('name').value = chart.name || '';
+        document.getElementById('date').value = `${bd.year}-${String(bd.month).padStart(2,'0')}-${String(bd.day).padStart(2,'0')}`;
+        document.getElementById('time').value = `${String(bd.hour).padStart(2,'0')}:${String(bd.minute).padStart(2,'0')}:${String(bd.second || 0).padStart(2,'0')}`;
+        document.getElementById('lat').value = bd.lat;
+        document.getElementById('lon').value = bd.lon;
+        document.getElementById('tz').value = bd.tz_offset;
+      }
+      
+      // Switch to Natal tab to show results
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('[data-tab="natal"]').classList.add('active');
+      document.getElementById('tab-natal').classList.add('active');
+      
+      alert(`Chart loaded: ${chart.name || 'Unknown'}. Available in all tabs via profile picker.`);
+      
+    } catch (err) {
+      alert('Invalid chart file: ' + err.message);
+      console.error('Chart load error:', err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CELESTIAL BLUEPRINT GENERATION
+// ═══════════════════════════════════════════════════════════════
+
+function generateBlueprint() {
+  if (!currentChart) {
+    alert('No chart computed. Cast a natal chart first.');
+    return;
+  }
+  
+  // Toggle blueprint panel
+  const panel = document.getElementById('blueprint-panel');
+  const interpPanel = document.getElementById('interpretation-panel');
+  
+  // Hide interpretation panel if open
+  if (interpPanel) interpPanel.style.display = 'none';
+  
+  // Toggle blueprint panel
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  
+  // Reset state
+  document.getElementById('blueprint-progress').style.display = 'none';
+  document.getElementById('blueprint-result').style.display = 'none';
+  document.getElementById('btn-generate-blueprint').disabled = false;
+}
+
+const BLUEPRINT_CHAPTERS = [
+  'Initializing document...',
+  'Creating title page...',
+  'Adding positions reference...',
+  'Writing Preface: The Correction...',
+  'Writing Chapter 1: The Natal Chart...',
+  'Writing Chapter 2: Current Transits...',
+  'Writing Chapter 3: Secondary Progressions...',
+  'Writing Chapter 4: Solar Arc Directions...',
+  'Writing Chapter 5: Relationship Archetypes...',
+  'Writing Chapter 6: Past Lives & Karma...',
+  'Writing Chapter 7: Psychological Profile...',
+  'Writing Chapter 8: Predictive Timing & Destiny...',
+  'Writing Chapter 9: Special Topics & Synthesis...',
+  'Adding closing page...',
+  'Saving document...',
+  'Blueprint complete!'
+];
+
+async function startBlueprintGeneration() {
+  if (typeof hasFeatureAccess === 'function' && !hasFeatureAccess('personal')) {
+    if (typeof showLicenseDialog === 'function') { showLicenseDialog(); }
+    else { alert('Personal edition or higher required for Blueprint Generation.'); }
+    return;
+  }
+
+  const btn = document.getElementById('btn-generate-blueprint');
+  const progress = document.getElementById('blueprint-progress');
+  const progressBar = document.getElementById('blueprint-progress-bar');
+  const status = document.getElementById('blueprint-status');
+  const result = document.getElementById('blueprint-result');
+  
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  progress.style.display = 'block';
+  result.style.display = 'none';
+  
+  // Animate progress (estimated timing — the actual generation is async)
+  let step = 0;
+  const totalSteps = BLUEPRINT_CHAPTERS.length;
+  const progressInterval = setInterval(() => {
+    if (step < totalSteps - 1) {
+      step++;
+      progressBar.style.width = ((step / totalSteps) * 90) + '%';
+      status.textContent = BLUEPRINT_CHAPTERS[Math.min(step, totalSteps - 1)];
+    }
+  }, 12000); // ~12s per chapter estimate
+  
+  try {
+    const chartData = window.currentChart; // Set by compute_chart()
+    if (!chartData) {
+      throw new Error('No chart computed yet. Generate a natal chart first.');
+    }
+    
+    const response = await fetch('/api/blueprint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chart: chartData,
+        date_str: document.getElementById('birth-date')?.value || '',
+        time_str: document.getElementById('birth-time')?.value || '',
+        location_str: document.getElementById('birth-location')?.value || '',
+        lat: chartData.birth_data?.lat || 0,
+        lon: chartData.birth_data?.lon || 0,
+        name: chartData.name || 'Subject'
+      })
+    });
+    
+    clearInterval(progressInterval);
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      progressBar.style.width = '100%';
+      status.textContent = 'Blueprint complete!';
+      result.style.display = 'block';
+      document.getElementById('blueprint-download-link').href = data.download_url;
+    } else {
+      throw new Error(data.error || 'Blueprint generation failed');
+    }
+  } catch (err) {
+    clearInterval(progressInterval);
+    status.textContent = 'Error: ' + err.message;
+    status.style.color = '#e74c3c';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📜 Generate Full Celestial Blueprint';
+  }
+}
+
+// Global chart loader - accessible from anywhere
+function triggerChartLoad() {
+  document.getElementById('global-load-file').click();
+}
+
+function loadChartForSynastry(slot) {
+  // slot is 'a' or 'b'
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const chart = JSON.parse(ev.target.result);
+        
+        // Normalize
+        if (!chart.birth_data && chart.birthData) chart.birth_data = chart.birthData;
+        if (chart.birth_data) {
+          const bd = chart.birth_data;
+          if (bd.tz !== undefined && bd.tz_offset === undefined) bd.tz_offset = bd.tz;
+          if (bd.second === undefined) bd.second = bd.sec || 0;
+        }
+        
+        // Save profile
+        saveProfile(chart);
+        
+        // Fill synastry form
+        const prefix = slot === 'a' ? 's1' : 's2';
+        const bd = chart.birth_data;
+        if (bd) {
+          document.getElementById(`${prefix}-name`).value = chart.name || '';
+          document.getElementById(`${prefix}-date`).value = `${bd.year}-${String(bd.month).padStart(2,'0')}-${String(bd.day).padStart(2,'0')}`;
+          document.getElementById(`${prefix}-time`).value = `${String(bd.hour).padStart(2,'0')}:${String(bd.minute).padStart(2,'0')}:${String(bd.second || 0).padStart(2,'0')}`;
+          document.getElementById(`${prefix}-lat`).value = bd.lat;
+          document.getElementById(`${prefix}-lon`).value = bd.lon;
+          document.getElementById(`${prefix}-tz`).value = bd.tz_offset;
+        }
+        
+        alert(`Loaded ${chart.name || 'chart'} into Person ${slot.toUpperCase()}`);
+      } catch (err) {
+        alert('Invalid chart: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ═══ API KEY MANAGEMENT ═══
+function saveAllApiKeys() {
+  const mistralKey = document.getElementById('mistral-api-key').value.trim();
+  const claudeKey = document.getElementById('claude-api-key').value.trim();
+  const ollamaModel = document.getElementById('ollama-model').value.trim();
+  const yiKey = document.getElementById('yi-api-key').value.trim();
+  const fireworksKey = document.getElementById('fireworks-api-key').value.trim();
+  const groqKey = document.getElementById('groq-api-key').value.trim();
+  
+  if (mistralKey) localStorage.setItem('stellaris13_mistral_key', mistralKey);
+  if (claudeKey) localStorage.setItem('stellaris13_claude_key', claudeKey);
+  if (ollamaModel) localStorage.setItem('stellaris13_ollama_model', ollamaModel);
+  if (yiKey) localStorage.setItem('stellaris13_yi_key', yiKey);
+  if (fireworksKey) localStorage.setItem('stellaris13_fireworks_key', fireworksKey);
+  if (groqKey) localStorage.setItem('stellaris13_groq_key', groqKey);
+  
+  alert('API settings saved!');
+}
+
+function loadApiKey() {
+  const mistralKey = localStorage.getItem('stellaris13_mistral_key');
+  const claudeKey = localStorage.getItem('stellaris13_claude_key');
+  const ollamaModel = localStorage.getItem('stellaris13_ollama_model');
+  const yiKey = localStorage.getItem('stellaris13_yi_key');
+  const fireworksKey = localStorage.getItem('stellaris13_fireworks_key');
+  const groqKey = localStorage.getItem('stellaris13_groq_key');
+  
+  if (mistralKey) document.getElementById('mistral-api-key').value = mistralKey;
+  if (claudeKey) document.getElementById('claude-api-key').value = claudeKey;
+  if (ollamaModel) document.getElementById('ollama-model').value = ollamaModel;
+  if (yiKey) document.getElementById('yi-api-key').value = yiKey;
+  if (fireworksKey) document.getElementById('fireworks-api-key').value = fireworksKey;
+  if (groqKey) document.getElementById('groq-api-key').value = groqKey;
+  
+  // Set up checkbox listeners
+  document.getElementById('use-mistral').addEventListener('change', toggleApiKeyVisibility);
+  document.getElementById('use-claude').addEventListener('change', toggleApiKeyVisibility);
+  document.getElementById('use-ollama').addEventListener('change', toggleApiKeyVisibility);
+  document.getElementById('use-yi').addEventListener('change', toggleApiKeyVisibility);
+  document.getElementById('use-fireworks').addEventListener('change', toggleApiKeyVisibility);
+  document.getElementById('use-groq').addEventListener('change', toggleApiKeyVisibility);
+  
+  // Load saved profiles
+  loadSavedProfiles();
+}
+
+function toggleApiKeyVisibility() {
+  document.getElementById('mistral-key-row').style.display = 
+    document.getElementById('use-mistral').checked ? 'flex' : 'none';
+  document.getElementById('claude-key-row').style.display = 
+    document.getElementById('use-claude').checked ? 'flex' : 'none';
+  document.getElementById('ollama-config-row').style.display = 
+    document.getElementById('use-ollama').checked ? 'flex' : 'none';
+  document.getElementById('yi-key-row').style.display = 
+    document.getElementById('use-yi').checked ? 'flex' : 'none';
+  document.getElementById('fireworks-key-row').style.display = 
+    document.getElementById('use-fireworks').checked ? 'flex' : 'none';
+  document.getElementById('groq-key-row').style.display = 
+    document.getElementById('use-groq').checked ? 'flex' : 'none';
+  
+  // Auto-fetch Ollama models when toggled on
+  if (document.getElementById('use-ollama').checked) {
+    refreshOllamaModels();
+  }
+}
+
+// Load API key on page load
+document.addEventListener('DOMContentLoaded', loadApiKey);
+
+// ═══ PROFILE MANAGEMENT ═══
+let savedProfiles = [];
+
+function loadSavedProfiles() {
+  const stored = localStorage.getItem('stellaris13_profiles');
+  savedProfiles = stored ? JSON.parse(stored) : [];
+  updateProfilePickers();
+}
+
+function saveProfile(chart) {
+  if (!chart || !chart.name) return;
+  
+  // Check if profile already exists
+  const existing = savedProfiles.findIndex(p => p.name === chart.name);
+  if (existing >= 0) {
+    savedProfiles[existing] = chart;
+  } else {
+    savedProfiles.push(chart);
+  }
+  
+  localStorage.setItem('stellaris13_profiles', JSON.stringify(savedProfiles));
+  updateProfilePickers();
+}
+
+function updateProfilePickers() {
+  const pickers = ['transit-profile-picker', 'synastry-profile-picker-a', 'synastry-profile-picker-b'];
+  
+  pickers.forEach(pickerId => {
+    const picker = document.getElementById(pickerId);
+    if (!picker) return;
+    
+    picker.innerHTML = '<span style="font-size:0.7rem; color:var(--star-dim); margin-right:0.5rem;">Load:</span>';
+    
+    savedProfiles.forEach((profile, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'profile-btn';
+      btn.textContent = profile.name.substring(0, 10);
+      btn.title = profile.name;
+      btn.onclick = () => loadProfileInto(pickerId, profile);
+      picker.appendChild(btn);
+    });
+  });
+}
+
+function loadProfileInto(pickerId, profile) {
+  const bd = profile.birth_data;
+  if (!bd) return;
+  
+  const dateStr = `${bd.year}-${String(bd.month).padStart(2,'0')}-${String(bd.day).padStart(2,'0')}`;
+  const timeStr = `${String(bd.hour).padStart(2,'0')}:${String(bd.minute).padStart(2,'0')}:${String(bd.second || 0).padStart(2,'0')}`;
+  
+  if (pickerId === 'transit-profile-picker') {
+    document.getElementById('t-name').value = profile.name;
+    document.getElementById('t-date').value = dateStr;
+    document.getElementById('t-time').value = timeStr;
+    document.getElementById('t-lat').value = bd.lat;
+    document.getElementById('t-lon').value = bd.lon;
+    document.getElementById('t-tz').value = bd.tz_offset;
+  } else if (pickerId === 'synastry-profile-picker-a') {
+    document.getElementById('s1-name').value = profile.name;
+    document.getElementById('s1-date').value = dateStr;
+    document.getElementById('s1-time').value = timeStr;
+    document.getElementById('s1-lat').value = bd.lat;
+    document.getElementById('s1-lon').value = bd.lon;
+    document.getElementById('s1-tz').value = bd.tz_offset;
+  } else if (pickerId === 'synastry-profile-picker-b') {
+    document.getElementById('s2-name').value = profile.name;
+    document.getElementById('s2-date').value = dateStr;
+    document.getElementById('s2-time').value = timeStr;
+    document.getElementById('s2-lat').value = bd.lat;
+    document.getElementById('s2-lon').value = bd.lon;
+    document.getElementById('s2-tz').value = bd.tz_offset;
+  }
+}
+
+// ═══ CHART PORTABILITY ═══
+function useChartForTransits() {
+  if (!currentChart || !currentChart.birth_data) {
+    alert('No chart data. Cast a natal chart first.');
+    return;
+  }
+  
+  // Save profile
+  saveProfile(currentChart);
+  
+  const bd = currentChart.birth_data;
+  document.getElementById('t-name').value = currentChart.name || '';
+  document.getElementById('t-date').value = `${bd.year}-${String(bd.month).padStart(2,'0')}-${String(bd.day).padStart(2,'0')}`;
+  document.getElementById('t-time').value = `${String(bd.hour).padStart(2,'0')}:${String(bd.minute).padStart(2,'0')}:${String(bd.second || 0).padStart(2,'0')}`;
+  document.getElementById('t-lat').value = bd.lat;
+  document.getElementById('t-lon').value = bd.lon;
+  document.getElementById('t-tz').value = bd.tz_offset;
+  
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('[data-tab="transits"]').classList.add('active');
+  document.getElementById('tab-transits').classList.add('active');
+  
+  const today = new Date();
+  document.getElementById('t-transit-date').value = today.toISOString().split('T')[0];
+}
+
+function useChartForSynastry() {
+  if (!currentChart || !currentChart.birth_data) {
+    alert('No chart data. Cast a natal chart first.');
+    return;
+  }
+  
+  // Save profile
+  saveProfile(currentChart);
+  
+  const bd = currentChart.birth_data;
+  document.getElementById('s1-name').value = currentChart.name || '';
+  document.getElementById('s1-date').value = `${bd.year}-${String(bd.month).padStart(2,'0')}-${String(bd.day).padStart(2,'0')}`;
+  document.getElementById('s1-time').value = `${String(bd.hour).padStart(2,'0')}:${String(bd.minute).padStart(2,'0')}:${String(bd.second || 0).padStart(2,'0')}`;
+  document.getElementById('s1-lat').value = bd.lat;
+  document.getElementById('s1-lon').value = bd.lon;
+  document.getElementById('s1-tz').value = bd.tz_offset;
+  
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('[data-tab="synastry"]').classList.add('active');
+  document.getElementById('tab-synastry').classList.add('active');
+}
+
+// ═══ MAP FUNCTIONALITY ═══
+const maps = {};
+
+function toggleMap(mapId, latInputId, lonInputId) {
+  const container = document.getElementById(mapId);
+  
+  if (container.style.display === 'none') {
+    container.style.display = 'block';
+    
+    if (!maps[mapId]) {
+      // Initialize map centered on US
+      const map = L.map(mapId).setView([39.8283, -98.5795], 4);
+      
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap © CARTO',
+        maxZoom: 19
+      }).addTo(map);
+      
+      let marker = null;
+      
+      map.on('click', function(e) {
+        const lat = e.latlng.lat.toFixed(4);
+        const lon = e.latlng.lng.toFixed(4);
+        
+        document.getElementById(latInputId).value = lat;
+        document.getElementById(lonInputId).value = lon;
+        
+        if (marker) {
+          marker.setLatLng(e.latlng);
+        } else {
+          marker = L.marker(e.latlng).addTo(map);
+        }
+      });
+      
+      maps[mapId] = { map, marker: null };
+      
+      // Force resize after display
+      setTimeout(() => map.invalidateSize(), 100);
+    } else {
+      maps[mapId].map.invalidateSize();
+    }
+  } else {
+    container.style.display = 'none';
+  }
+}
+
+// ═══ ASPECT EXPAND ═══
+let aspectsExpanded = false;
+let allAspects = [];
+
+function toggleAspectExpand() {
+  aspectsExpanded = !aspectsExpanded;
+  const btn = document.getElementById('expand-aspects-btn');
+  btn.textContent = aspectsExpanded ? 'Show Less ▲' : 'Show All Aspects ▼';
+  
+  if (currentChart) {
+    renderAspects(currentChart.aspects, aspectsExpanded);
+  }
+}
+
+function renderAspects(aspects, showAll = false) {
+  allAspects = aspects;
+  const maxAspects = showAll ? aspects.length : 25;
+  let asp = '';
+  
+  for (let i = 0; i < Math.min(aspects.length, maxAspects); i++) {
+    const a = aspects[i];
+    const house1 = currentChart.placements[a.body1]?.house || '';
+    const house2 = currentChart.placements[a.body2]?.house || '';
+    
+    asp += `<div class="aspect-row">
+      <div class="aspect-body1">${a.body1}${house1 ? ' <span style="color:var(--star-dim);font-size:0.7rem;">H${house1}</span>' : ''}</div>
+      <div class="aspect-glyph asp-${a.abbr}">${a.abbr}</div>
+      <div class="aspect-body2">${a.body2}${house2 ? ' <span style="color:var(--star-dim);font-size:0.7rem;">H${house2}</span>' : ''}</div>
+      <div class="aspect-orb">${a.orb.toFixed(2)}°</div>
+    </div>`;
+  }
+  
+  if (aspects.length > 25) {
+    document.getElementById('expand-aspects-btn').style.display = 'block';
+    if (!showAll) {
+      asp += `<div style="text-align:center;color:var(--star-dim);padding:0.5rem;font-size:0.82rem;">
+        + ${aspects.length - 25} more aspects
+      </div>`;
+    }
+  }
+  
+  document.getElementById('aspects-list').innerHTML = asp;
+}
+
+// ═══ WHEEL OPTIONS ═══
+function redrawWheel() {
+  if (currentChart) {
+    const wheelContainer = document.getElementById('chart-wheel');
+    if (wheelContainer) {
+      wheelContainer.innerHTML = generateChartWheel(currentChart);
+    }
+  }
+}
+
+// ═══ INTERPRETATION TYPE ═══
+let currentInterpType = 'comprehensive';
+
+function setInterpType(type, btn) {
+  currentInterpType = type;
+  document.querySelectorAll('.interp-type').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ═══ AI INTERPRETATION ═══
+async function requestInterpretation() {
+  if (!currentChart) {
+    alert('No chart to interpret. Cast a chart first.');
+    return;
+  }
+  
+  const panel = document.getElementById('interpretation-panel');
+  const content = document.getElementById('interpretation-content');
+  const loading = document.getElementById('interpretation-loading');
+  
+  panel.style.display = 'block';
+  content.innerHTML = '';
+  loading.style.display = 'block';
+  
+  const providers = getSelectedProviders();
+  
+  try {
+    const resp = await fetch('/interpret', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ 
+        chart: currentChart, 
+        type: currentInterpType,
+        providers: providers,
+        method: currentMethod  // v2.4: Pass selected method to backend
+      }),
+    });
+    
+    const result = await resp.json();
+    loading.style.display = 'none';
+    
+    if (result.status === 'ok') {
+      let html = '';
+      for (const [provider, interp] of Object.entries(result.interpretations || {[result.provider || 'AI']: result.interpretation})) {
+        const formatted = interp
+          .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--gold);">$1</strong>')
+          .replace(/\n\n/g, '</p><p>')
+          .replace(/\n/g, '<br>');
+        
+        html += `<div style="margin-bottom: 2rem;">
+          <div style="color: var(--ophiuchus); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">— ${provider} —</div>
+          <p>${formatted}</p>
+        </div>`;
+      }
+      content.innerHTML = html;
+    } else {
+      content.innerHTML = '<p style="color:var(--retro-red);">' + result.message + '</p>';
+    }
+  } catch (e) {
+    loading.style.display = 'none';
+    content.innerHTML = '<p style="color:var(--retro-red);">Connection error: ' + e.message + '</p>';
+  }
+}
+
+function getSelectedProviders() {
+  const providers = {};
+  
+  if (document.getElementById('use-mistral').checked) {
+    providers.mistral = document.getElementById('mistral-api-key').value.trim() || 
+                        localStorage.getItem('stellaris13_mistral_key');
+  }
+  if (document.getElementById('use-claude').checked) {
+    providers.claude = document.getElementById('claude-api-key').value.trim() || 
+                       localStorage.getItem('stellaris13_claude_key');
+  }
+  if (document.getElementById('use-ollama').checked) {
+    const selectEl = document.getElementById('ollama-model');
+    const models = Array.from(selectEl.selectedOptions).map(o => o.value).filter(m => m);
+    if (models.length === 0) models.push(localStorage.getItem('stellaris13_ollama_model') || 'hermes3:8b');
+    providers.ollama = models[0];  // For backward compatibility
+    providers.ollama_models = models;  // Full list for sequential runs
+  }
+  if (document.getElementById('use-yi').checked) {
+    providers.yi = document.getElementById('yi-api-key').value.trim() || 
+                   localStorage.getItem('stellaris13_yi_key');
+  }
+  if (document.getElementById('use-fireworks').checked) {
+    providers.fireworks = document.getElementById('fireworks-api-key').value.trim() || 
+                          localStorage.getItem('stellaris13_fireworks_key');
+  }
+  if (document.getElementById('use-groq').checked) {
+    providers.groq = document.getElementById('groq-api-key').value.trim() || 
+                     localStorage.getItem('stellaris13_groq_key');
+  }
+  
+  return providers;
+}
+
+// Sync provider toggles between transit and natal tabs
+function syncProviderToggle(el) {
+  const provider = el.dataset.provider;
+  const checked = el.checked;
+  // Update the canonical checkbox in the natal tab
+  const canonical = document.getElementById('use-' + provider);
+  if (canonical) canonical.checked = checked;
+  // Update all transit tab mirrors
+  document.querySelectorAll(`.provider-toggle[data-provider="${provider}"]`).forEach(cb => {
+    cb.checked = checked;
+  });
+  // Auto-fetch Ollama models when toggled on
+  if (provider === 'ollama' && checked) refreshOllamaModels();
+}
+
+// Fetch installed Ollama models from local API
+async function refreshOllamaModels() {
+  const selectEl = document.getElementById('ollama-model');
+  const statusEl = document.getElementById('ollama-status');
+  if (!selectEl) return;
+  
+  statusEl.textContent = 'Connecting to Ollama...';
+  statusEl.style.color = 'var(--gold)';
+  
+  try {
+    const response = await fetch('/ollama/models');
+    const data = await response.json();
+    
+    if (data.status === 'ok' && data.models.length > 0) {
+      // Remember current selections
+      const previousSelections = Array.from(selectEl.selectedOptions).map(o => o.value);
+      
+      selectEl.innerHTML = '';
+      for (const m of data.models) {
+        const opt = document.createElement('option');
+        opt.value = m.name;
+        const sizeInfo = m.parameter_size ? ` (${m.parameter_size})` : (m.size_gb ? ` (${m.size_gb}GB)` : '');
+        opt.textContent = `${m.name}${sizeInfo}`;
+        // Re-select if was previously selected, or select first if nothing was
+        if (previousSelections.includes(m.name)) opt.selected = true;
+        selectEl.appendChild(opt);
+      }
+      
+      // If nothing re-selected, select first model
+      if (selectEl.selectedOptions.length === 0 && selectEl.options.length > 0) {
+        selectEl.options[0].selected = true;
+      }
+      
+      statusEl.textContent = `${data.models.length} models found`;
+      statusEl.style.color = '#2ecc71';
+    } else if (data.status === 'error') {
+      statusEl.textContent = data.message || 'Ollama not available';
+      statusEl.style.color = 'var(--retro-red)';
+    }
+  } catch (e) {
+    statusEl.textContent = 'Could not connect to Ollama';
+    statusEl.style.color = 'var(--retro-red)';
+  }
+}
+
+// On tab switch, sync transit toggles to match natal state
+document.addEventListener('DOMContentLoaded', function() {
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      // Sync transit provider toggles from natal canonical state
+      ['mistral','claude','ollama','groq'].forEach(p => {
+        const canonical = document.getElementById('use-' + p);
+        if (canonical) {
+          document.querySelectorAll(`.provider-toggle[data-provider="${p}"]`).forEach(cb => {
+            cb.checked = canonical.checked;
+          });
+        }
+      });
+    });
+  });
+});
+
+// ═══ TRANSIT AI INTERPRETATION ═══
+let currentTransitData = null;
+
+async function requestTransitInterpretation() {
+  if (!currentTransitData) {
+    alert('Compute transits first.');
+    return;
+  }
+  
+  const container = document.getElementById('transit-interpretation');
+  const content = document.getElementById('transit-interp-content');
+  
+  container.style.display = 'block';
+  content.innerHTML = '<div style="text-align:center;color:var(--gold);padding:2rem;">Analyzing transits...</div>';
+  
+  const providers = getSelectedProviders();
+  
+  try {
+    const resp = await fetch('/interpret', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ 
+        chart: currentTransitData.natal,
+        transits: currentTransitData.transits,
+        type: 'transit',
+        providers: providers
+      }),
+    });
+    
+    const result = await resp.json();
+    
+    if (result.status === 'ok') {
+      let html = '';
+      for (const [provider, interp] of Object.entries(result.interpretations || {[result.provider || 'AI']: result.interpretation})) {
+        const formatted = interp
+          .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--iau-blue);">$1</strong>')
+          .replace(/\n\n/g, '</p><p>')
+          .replace(/\n/g, '<br>');
+        html += `<div style="margin-bottom: 1.5rem;"><div style="color:var(--iau-blue);font-size:0.75rem;margin-bottom:0.3rem;">— ${provider} —</div><p>${formatted}</p></div>`;
+      }
+      content.innerHTML = html;
+    } else {
+      content.innerHTML = '<p style="color:var(--retro-red);">' + result.message + '</p>';
+    }
+  } catch (e) {
+    content.innerHTML = '<p style="color:var(--retro-red);">Error: ' + e.message + '</p>';
+  }
+}
+
+// ═══ SYNASTRY AI INTERPRETATION ═══
+let currentSynastryData = null;
+
+async function requestSynastryInterpretation() {
+  if (!currentSynastryData) {
+    alert('Compute synastry first.');
+    return;
+  }
+  
+  const container = document.getElementById('synastry-interpretation');
+  const content = document.getElementById('synastry-interp-content');
+  
+  container.style.display = 'block';
+  content.innerHTML = '<div style="text-align:center;color:var(--gold);padding:2rem;">Weaving the interpretation...</div>';
+  
+  const providers = getSelectedProviders();
+  
+  try {
+    const resp = await fetch('/interpret', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ 
+        chart1: currentSynastryData.chart1,
+        chart2: currentSynastryData.chart2,
+        synastry: currentSynastryData.synastry,
+        type: 'synastry',
+        providers: providers
+      }),
+    });
+    
+    const result = await resp.json();
+    
+    if (result.status === 'ok') {
+      let html = '';
+      for (const [provider, interp] of Object.entries(result.interpretations || {[result.provider || 'AI']: result.interpretation})) {
+        const formatted = interp
+          .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--ophiuchus);">$1</strong>')
+          .replace(/\n\n/g, '</p><p>')
+          .replace(/\n/g, '<br>');
+        html += `<div style="margin-bottom: 1.5rem;"><div style="color:var(--ophiuchus);font-size:0.75rem;margin-bottom:0.3rem;">— ${provider} —</div><p>${formatted}</p></div>`;
+      }
+      content.innerHTML = html;
+    } else {
+      content.innerHTML = '<p style="color:var(--retro-red);">' + result.message + '</p>';
+    }
+  } catch (e) {
+    content.innerHTML = '<p style="color:var(--retro-red);">Error: ' + e.message + '</p>';
+  }
+}
+
+// ═══ TRANSITS ═══
+async function computeTransits() {
+  const spinner = document.getElementById('transit-spinner');
+  const results = document.getElementById('transit-results');
+  
+  spinner.style.display = 'block';
+  results.innerHTML = '';
+  
+  const data = {
+    natal: {
+      name: document.getElementById('t-name').value || 'Natal',
+      date: document.getElementById('t-date').value,
+      time: document.getElementById('t-time').value,
+      lat: document.getElementById('t-lat').value,
+      lon: document.getElementById('t-lon').value,
+      tz: document.getElementById('t-tz').value,
+    },
+    transit: {
+      date: document.getElementById('t-transit-date').value || '',
+      time: document.getElementById('t-transit-time').value || '12:00:00',
+      tz: '0',
+    },
+  };
+  
+  try {
+    const resp = await fetch('/transits', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    });
+    
+    const result = await resp.json();
+    
+    if (result.status === 'ok') {
+      renderTransits(result);
+    } else {
+      alert('Error: ' + result.message);
+    }
+  } catch (e) {
+    alert('Connection error: ' + e.message);
+  }
+  
+  spinner.style.display = 'none';
+}
+
+function renderTransits(result) {
+  // Store for AI interpretation
+  currentTransitData = result;
+  
+  const container = document.getElementById('transit-results');
+  const t = result.transits;
+  const tt = t.transit_time;
+  const natal = result.natal;
+  
+  let html = `
+    <div class="chart-header" style="margin-top:2rem;">
+      <div class="chart-name">Transits for ${result.natal.name}</div>
+      <div class="chart-meta">
+        Transit time: ${tt.year}-${String(tt.month).padStart(2,'0')}-${String(tt.day).padStart(2,'0')}
+        ${String(tt.hour).padStart(2,'0')}:${String(tt.minute).padStart(2,'0')} UTC
+      </div>
+    </div>
+    <div class="transit-grid">
+      <div class="transit-planets">
+        <div class="section-title"><span class="icon">✦</span>Current Positions</div>
+        <table class="placement-table">
+          <thead><tr><th>Body</th><th>Tropical</th><th style="color:var(--ophiuchus)">13-Sign</th><th>House</th></tr></thead>
+          <tbody>`;
+  
+  const order = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto','North Node'];
+  order.forEach(name => {
+    const p = t.placements[name];
+    if (!p) return;
+    const retro = p.retrograde ? '<span class="retro">℞</span>' : '';
+    
+    // Calculate which natal house this transit is in
+    const transitLon = p.tropical_longitude;
+    const ascLon = natal.angles?.Ascendant?.tropical_longitude || 0;
+    const houseNum = Math.floor(((transitLon - ascLon + 360) % 360) / 30) + 1;
+    
+    html += `<tr>
+      <td class="body-name">${name}${retro}</td>
+      <td class="tropical-cell">${p.tropical_symbol} ${p.tropical_sign} ${fmtDeg(p.tropical_degree)}</td>
+      <td class="constellation-cell standard-col">${p.standard_symbol} ${p.standard_constellation} ${fmtDeg(p.standard_degree)}</td>
+      <td class="house-cell">H${houseNum}</td>
+    </tr>`;
+  });
+  
+  html += `</tbody></table></div>
+    <div class="transit-aspects">
+      <div class="section-title"><span class="icon">∠</span>Aspects to Natal</div>`;
+  
+  const aspects = t.aspects_to_natal.slice(0, 20);
+  aspects.forEach(a => {
+    const natalBody = natal.placements[a.natal_body];
+    const natalHouse = natalBody?.house || '';
+    
+    html += `<div class="aspect-row">
+      <div class="aspect-body1" style="color:var(--iau-blue);">T.${a.transit_body}</div>
+      <div class="aspect-glyph asp-${a.abbr}">${a.abbr}</div>
+      <div class="aspect-body2">N.${a.natal_body}${natalHouse ? ` <span style="color:var(--star-dim);font-size:0.68rem;">H${natalHouse}</span>` : ''}</div>
+      <div class="aspect-orb">${a.orb.toFixed(2)}°</div>
+    </div>`;
+  });
+  
+  if (t.aspects_to_natal.length > 20) {
+    html += `<button class="expand-btn" onclick="expandTransitAspects()">Show All ${t.aspects_to_natal.length} Aspects ▼</button>`;
+  }
+  
+  html += `</div></div>`;
+  container.innerHTML = html;
+  
+  // Show AI section
+  document.getElementById('transit-ai-section').style.display = 'block';
+}
+
+function expandTransitAspects() {
+  if (!currentTransitData) return;
+  
+  const aspects = currentTransitData.transits.aspects_to_natal;
+  const natal = currentTransitData.natal;
+  let html = '';
+  
+  aspects.forEach(a => {
+    const natalBody = natal.placements[a.natal_body];
+    const natalHouse = natalBody?.house || '';
+    
+    html += `<div class="aspect-row">
+      <div class="aspect-body1" style="color:var(--iau-blue);">T.${a.transit_body}</div>
+      <div class="aspect-glyph asp-${a.abbr}">${a.abbr}</div>
+      <div class="aspect-body2">N.${a.natal_body}${natalHouse ? ` <span style="color:var(--star-dim);font-size:0.68rem;">H${natalHouse}</span>` : ''}</div>
+      <div class="aspect-orb">${a.orb.toFixed(2)}°</div>
+    </div>`;
+  });
+  
+  document.querySelector('.transit-aspects').innerHTML = `
+    <div class="section-title"><span class="icon">∠</span>All Aspects to Natal (${aspects.length})</div>
+    ${html}
+  `;
+}
+
+// ═══ EXTEND RENDER CHART ═══
+const originalRenderChart = renderChart;
+renderChart = function(chart) {
+  originalRenderChart(chart);
+  
+  // Save profile for easy reuse
+  saveProfile(chart);
+  
+  // Add syzygy display
+  renderSyzygy(chart);
+  
+  // Generate chart wheel
+  const wheelContainer = document.getElementById('chart-wheel');
+  if (wheelContainer) {
+    wheelContainer.innerHTML = generateChartWheel(chart);
+  }
+  
+  // Re-render aspects with house info
+  renderAspects(chart.aspects, aspectsExpanded);
+};
+
+// ═══ RECTIFICATION MODULE ═══
+let rectEvents = [];
+
+function toggleRectCustomTime() {
+  const preset = document.getElementById('rect-range-preset').value;
+  document.getElementById('rect-custom-times').style.display = preset === 'custom' ? 'block' : 'none';
+}
+
+function addRectEvent() {
+  const dateEl = document.getElementById('evt-date');
+  const typeEl = document.getElementById('evt-type');
+  
+  if (!dateEl.value) {
+    alert('Please select an event date.');
+    return;
+  }
+  if (rectEvents.length >= 10) {
+    alert('Maximum 10 events.');
+    return;
+  }
+  
+  rectEvents.push({
+    date: dateEl.value,
+    type: typeEl.value,
+    label: typeEl.options[typeEl.selectedIndex].text
+  });
+  
+  dateEl.value = '';
+  renderRectEvents();
+}
+
+function removeRectEvent(idx) {
+  rectEvents.splice(idx, 1);
+  renderRectEvents();
+}
+
+function renderRectEvents() {
+  const list = document.getElementById('rect-event-list');
+  list.innerHTML = '';
+  
+  rectEvents.forEach((evt, idx) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:var(--void); padding:0.6rem 1rem; margin-bottom:0.5rem; border-radius:6px; border:1px solid var(--dust);';
+    div.innerHTML = `
+      <span><strong style="color:var(--gold);">${evt.label}</strong> — ${evt.date}</span>
+      <button onclick="removeRectEvent(${idx})" style="background:none; border:none; color:var(--retro-red); cursor:pointer; font-size:1.2rem;">&times;</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+async function runRectification() {
+  const date = document.getElementById('rect-date').value;
+  const lat = document.getElementById('rect-lat').value;
+  const lon = document.getElementById('rect-lon').value;
+  const tz = document.getElementById('rect-tz').value;
+  
+  if (!date || !lat || !lon || !tz) {
+    alert('Please fill in all birth information.');
+    return;
+  }
+  if (rectEvents.length < 3) {
+    alert('Please add at least 3 life events.');
+    return;
+  }
+  
+  // Time range
+  let start = '00:00', end = '23:59';
+  const preset = document.getElementById('rect-range-preset').value;
+  if (preset === 'morning') { start = '06:00'; end = '12:00'; }
+  else if (preset === 'afternoon') { start = '12:00'; end = '18:00'; }
+  else if (preset === 'evening') { start = '18:00'; end = '23:59'; }
+  else if (preset === 'night') { start = '00:00'; end = '06:00'; }
+  else if (preset === 'custom') {
+    start = document.getElementById('rect-start').value;
+    end = document.getElementById('rect-end').value;
+  }
+  
+  const spinner = document.getElementById('rect-spinner');
+  const results = document.getElementById('rect-results');
+  spinner.style.display = 'block';
+  results.innerHTML = '';
+  
+  try {
+    const resp = await fetch('/rectify', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        birth_date: date,
+        lat: parseFloat(lat),
+        lon: parseFloat(lon),
+        tz: parseFloat(tz),
+        time_range: { start, end },
+        events: rectEvents
+      })
+    });
+    
+    const data = await resp.json();
+    spinner.style.display = 'none';
+    
+    if (data.status === 'ok') {
+      displayRectResults(data.results);
+    } else {
+      alert('Error: ' + data.message);
+    }
+  } catch (e) {
+    spinner.style.display = 'none';
+    alert('Connection error: ' + e.message);
+  }
+}
+
+function displayRectResults(results) {
+  const container = document.getElementById('rect-results');
+  
+  if (!results || results.length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:var(--star-dim);">No conclusive results. Try adding more events or widening the time range.</p>';
+    return;
+  }
+  
+  const maxScore = results[0].score;
+  
+  let html = '<div class="section-title"><span class="icon">⚕</span>Top Candidate Times</div>';
+  
+  results.forEach((res, idx) => {
+    const pct = maxScore > 0 ? (res.score / maxScore * 100).toFixed(0) : 0;
+    const barColor = idx === 0 ? 'var(--ophiuchus)' : 'var(--iau-blue)';
+    
+    html += `
+      <div style="background: var(--void); border: 1px solid var(--dust); border-left: 4px solid ${barColor}; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h4 style="margin: 0; font-size: 1.3rem; color: var(--gold);">${idx + 1}. ${res.time_formatted}</h4>
+          <span style="font-weight: bold; color: ${barColor};">${res.score.toFixed(1)} pts (${pct}%)</span>
+        </div>
+        
+        <div style="width: 100%; background: var(--deep); height: 6px; border-radius: 3px; margin: 0.8rem 0;">
+          <div style="width: ${pct}%; background: ${barColor}; height: 100%; border-radius: 3px;"></div>
+        </div>
+        
+        <details style="color: var(--star-dim); font-size: 0.85rem;">
+          <summary style="cursor: pointer; color: var(--star-mid);">View Event Matches</summary>
+          <div style="margin-top: 0.8rem;">
+            ${res.event_scores.map(ev => `
+              <div style="margin-bottom: 0.6rem; padding-left: 0.5rem; border-left: 2px solid var(--dust);">
+                <strong style="color: var(--star-bright);">${ev.event}</strong> — ${ev.score.toFixed(1)} pts<br>
+                <span style="font-size: 0.8rem; color: var(--star-dim);">${ev.hits.join('<br>') || 'No tight aspects'}</span>
+              </div>
+            `).join('')}
+          </div>
+        </details>
+        
+        <button class="btn-action" onclick="useRectifiedTime('${res.time_formatted}', ${res.time})" style="margin-top: 0.8rem;">Use This Time</button>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+function useRectifiedTime(formatted, decimalHour) {
+  const h = Math.floor(decimalHour);
+  const m = Math.round((decimalHour % 1) * 60);
+  const time24 = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`;
+  
+  // Copy to natal chart form
+  document.getElementById('date').value = document.getElementById('rect-date').value;
+  document.getElementById('time').value = time24;
+  document.getElementById('lat').value = document.getElementById('rect-lat').value;
+  document.getElementById('lon').value = document.getElementById('rect-lon').value;
+  document.getElementById('tz').value = document.getElementById('rect-tz').value;
+  
+  // Switch to Natal tab
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('[data-tab="natal"]').classList.add('active');
+  document.getElementById('tab-natal').classList.add('active');
+  
+  alert(`Time set to ${formatted}. Click "Cast Chart" to generate the natal chart.`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// v2.4: CONVERSATIONAL CHAT MODE
+// ═══════════════════════════════════════════════════════════════
+let chatSessionId = null;
+
+async function sendChatMessage() {
+  if (!currentChart) {
+    alert('No chart loaded. Cast or load a chart first.');
+    return;
+  }
+  
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+  
+  const chatContainer = document.getElementById('chat-messages');
+  const providers = getSelectedProviders();
+  
+  // Show user message
+  chatContainer.innerHTML += `
+    <div style="margin: 1rem 0; text-align: right;">
+      <div style="display: inline-block; background: var(--gold-dim); color: var(--star-white); padding: 0.8rem 1.2rem; border-radius: 12px 12px 0 12px; max-width: 80%;">
+        ${escapeHtml(message)}
+      </div>
+    </div>`;
+  
+  input.value = '';
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+  
+  // Show loading
+  const loadingId = 'loading-' + Date.now();
+  chatContainer.innerHTML += `
+    <div id="${loadingId}" style="margin: 1rem 0;">
+      <div style="display: inline-block; background: var(--nebula); color: var(--star-mid); padding: 0.8rem 1.2rem; border-radius: 12px 12px 12px 0;">
+        <span style="animation: blink 1.4s infinite;">●●●</span>
+      </div>
+    </div>`;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+  
+  try {
+    const resp = await fetch('/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        chart: currentChart,
+        message: message,
+        session_id: chatSessionId,
+        providers: providers,
+        method: currentMethod
+      })
+    });
+    
+    const result = await resp.json();
+    document.getElementById(loadingId)?.remove();
+    
+    if (result.status === 'ok') {
+      chatSessionId = result.session_id;
+      
+      const formatted = result.response
+        .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--gold);">$1</strong>')
+        .replace(/\n/g, '<br>');
+      
+      chatContainer.innerHTML += `
+        <div style="margin: 1rem 0;">
+          <div style="font-size: 0.7rem; color: var(--ophiuchus); margin-bottom: 0.3rem;">${result.model}</div>
+          <div style="display: inline-block; background: var(--nebula); color: var(--star-bright); padding: 0.8rem 1.2rem; border-radius: 12px 12px 12px 0; max-width: 85%; border: 1px solid var(--dust);">
+            ${formatted}
+          </div>
+        </div>`;
+    } else {
+      chatContainer.innerHTML += `
+        <div style="margin: 1rem 0; color: var(--retro-red);">Error: ${result.message}</div>`;
+    }
+    
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+  } catch (e) {
+    document.getElementById(loadingId)?.remove();
+    chatContainer.innerHTML += `
+      <div style="margin: 1rem 0; color: var(--retro-red);">Connection error: ${e.message}</div>`;
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function clearChat() {
+  chatSessionId = null;
+  document.getElementById('chat-messages').innerHTML = `
+    <div style="text-align: center; color: var(--star-dim); padding: 2rem;">
+      Load or cast a chart, then ask questions about it.<br>
+      The AI will treat your chart as the sole source of truth.
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPLIANCE: First-visit disclaimer
+// ═══════════════════════════════════════════════════════════════
+function showDisclaimerIfNeeded() {
+  if (!localStorage.getItem('stellaris13_disclaimer_accepted')) {
+    document.getElementById('disclaimer-modal').style.display = 'flex';
+  }
+}
+
+function acceptDisclaimer() {
+  localStorage.setItem('stellaris13_disclaimer_accepted', 'true');
+  localStorage.setItem('stellaris13_disclaimer_date', new Date().toISOString());
+  document.getElementById('disclaimer-modal').style.display = 'none';
+}
+
+// Show disclaimer on load
+document.addEventListener('DOMContentLoaded', showDisclaimerIfNeeded);
+</script>
+
+<!-- First-Visit Disclaimer Modal -->
+<div id="disclaimer-modal" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10, 10, 15, 0.95);
+  z-index: 10000;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+">
+  <div style="
+    background: linear-gradient(135deg, var(--deep), var(--nebula));
+    border: 1px solid var(--gold-dim);
+    border-radius: 16px;
+    max-width: 600px;
+    padding: 2.5rem;
+    text-align: center;
+  ">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">⛎</div>
+    <h2 style="font-family: var(--font-display); font-size: 1.8rem; color: var(--gold); margin-bottom: 1rem;">
+      Welcome to Stellaris-13
+    </h2>
+    <p style="color: var(--star-bright); margin-bottom: 1.5rem; line-height: 1.7;">
+      This is a <strong>13-sign astronomical ephemeris</strong> calculator using actual IAU constellation boundaries, including Ophiuchus.
+    </p>
+    
+    <div style="
+      background: var(--void);
+      border: 1px solid var(--dust);
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+      text-align: left;
+      font-size: 0.85rem;
+      color: var(--star-mid);
+    ">
+      <strong style="color: var(--ophiuchus);">Important:</strong><br>
+      • This service is for <strong>entertainment and education only</strong><br>
+      • Not a substitute for medical, financial, or professional advice<br>
+      • AI interpretations are AI-generated, not professionally reviewed<br>
+      • Your data is processed locally; we don't store birth data on servers
+    </div>
+    
+    <p style="font-size: 0.8rem; color: var(--star-dim); margin-bottom: 1.5rem;">
+      By continuing, you agree to our 
+      <a href="/terms" target="_blank" style="color: var(--ophiuchus);">Terms of Service</a> and 
+      <a href="/privacy" target="_blank" style="color: var(--ophiuchus);">Privacy Policy</a>.
+    </p>
+    
+    <button onclick="acceptDisclaimer()" style="
+      background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+      border: none;
+      border-radius: 8px;
+      color: var(--void);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 500;
+      padding: 1rem 3rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    ">
+      I Understand — Enter Stellaris-13
+    </button>
+  </div>
+</div>
+
+<!-- GDPR/Privacy Consent Banner -->
+<div id="consent-banner" style="
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, var(--deep), var(--nebula));
+  border-top: 1px solid var(--dust);
+  padding: 1.5rem 2rem;
+  z-index: 10000;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+">
+  <div style="max-width: 1100px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; justify-content: space-between;">
+    <div style="flex: 1; min-width: 300px;">
+      <div style="color: var(--star-white); font-weight: 500; margin-bottom: 0.5rem;">Privacy & Data Usage</div>
+      <div style="color: var(--star-mid); font-size: 0.85rem; line-height: 1.6;">
+        Stellaris-13 stores your chart data and preferences in your browser's local storage. 
+        When you use AI interpretation, chart data is sent to the selected AI provider(s). 
+        We do not store personal data on our servers.
+        <a href="/legal/privacy" style="color: var(--gold);">Privacy Policy</a> · 
+        <a href="/legal/terms" style="color: var(--gold);">Terms</a>
+      </div>
+    </div>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <button onclick="acceptConsent('essential')" style="
+        background: var(--dust);
+        border: 1px solid var(--star-dim);
+        border-radius: 6px;
+        color: var(--star-bright);
+        padding: 0.6rem 1.2rem;
+        cursor: pointer;
+        font-family: var(--font-body);
+        font-size: 0.85rem;
+      ">Essential Only</button>
+      <button onclick="acceptConsent('all')" style="
+        background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+        border: none;
+        border-radius: 6px;
+        color: var(--void);
+        padding: 0.6rem 1.5rem;
+        cursor: pointer;
+        font-family: var(--font-body);
+        font-size: 0.85rem;
+        font-weight: 500;
+      ">Accept All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer style="
+  background: var(--void);
+  border-top: 1px solid var(--dust);
+  padding: 2rem;
+  text-align: center;
+  color: var(--star-dim);
+  font-size: 0.8rem;
+  margin-top: 3rem;
+">
+  <div style="max-width: 1100px; margin: 0 auto;">
+    <div style="margin-bottom: 1rem;">
+      <a href="/legal/terms" style="color: var(--star-dim); margin: 0 0.5rem;">Terms</a> · 
+      <a href="/legal/privacy" style="color: var(--star-dim); margin: 0 0.5rem;">Privacy</a> · 
+      <a href="/legal/disclaimer" style="color: var(--star-dim); margin: 0 0.5rem;">Disclaimer</a> · 
+      <a href="/about/founder" style="color: var(--star-dim); margin: 0 0.5rem;">About</a>
+    </div>
+    <div>
+      Stellaris-13 v2.7 · 13-Sign Astronomical Ephemeris · Built with Swiss Ephemeris<br>
+      <span style="color: var(--ophiuchus);">⛎</span> Including Ophiuchus, the Serpent-Bearer
+    </div>
+    <div style="margin-top: 1rem; font-size: 0.75rem;">
+      Astrological content is for entertainment and spiritual exploration only. 
+      Not a substitute for professional advice.
+    </div>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONSENT MANAGEMENT (GDPR/CCPA)
+// ═══════════════════════════════════════════════════════════════
+
+function checkConsent() {
+  const consent = localStorage.getItem('stellaris13_consent');
+  if (!consent) {
+    document.getElementById('consent-banner').style.display = 'block';
+  }
+}
+
+function acceptConsent(level) {
+  const consentData = {
+    level: level,
+    timestamp: new Date().toISOString(),
+    version: '1.0'
+  };
+  localStorage.setItem('stellaris13_consent', JSON.stringify(consentData));
+  document.getElementById('consent-banner').style.display = 'none';
+  
+  // Log consent to server (optional, for audit trail)
+  fetch('/api/consent', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      types: level === 'all' ? ['essential', 'analytics', 'ai_providers'] : ['essential'],
+      granted: true
+    })
+  }).catch(() => {});  // Silent fail OK
+}
+
+function clearAllData() {
+  if (!confirm('This will delete all your saved charts, API keys, and preferences. This cannot be undone. Continue?')) {
+    return;
+  }
+  
+  // Clear localStorage
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('stellaris13_')) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+  
+  // Clear session/server data
+  fetch('/api/data/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({confirm: true})
+  }).then(() => {
+    alert('All data cleared. The page will now reload.');
+    location.reload();
+  }).catch(() => {
+    alert('Local data cleared. Server communication failed, but your browser data has been removed.');
+    location.reload();
+  });
+}
+
+function exportMyData() {
+  // Gather all local data
+  const charts = [];
+  const preferences = {};
+  
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('stellaris13_')) {
+      const value = localStorage.getItem(key);
+      if (key.includes('profile') || key.includes('chart')) {
+        try {
+          charts.push(JSON.parse(value));
+        } catch (e) {
+          charts.push(value);
+        }
+      } else {
+        preferences[key.replace('stellaris13_', '')] = value;
+      }
+    }
+  }
+  
+  fetch('/api/data/export', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({charts, preferences})
+  })
+  .then(resp => resp.json())
+  .then(data => {
+    // Download as JSON file
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'stellaris13_data_export.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  })
+  .catch(err => {
+    alert('Export failed: ' + err.message);
+  });
+}
+
+// Check consent on page load
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(checkConsent, 1000);  // Delay to not block initial render
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CRYPTO ASTROLOGY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Toggle custom coin form
+document.getElementById('crypto-coin-select').addEventListener('change', function() {
+  document.getElementById('custom-coin-form').style.display = this.value === 'CUSTOM' ? 'block' : 'none';
+});
+
+function getCryptoSelection() {
+  const select = document.getElementById('crypto-coin-select');
+  if (select.value === 'CUSTOM') {
+    return {
+      coin: 'CUSTOM',
+      custom_genesis: {
+        name: document.getElementById('custom-coin-name').value || 'Custom Coin',
+        symbol: document.getElementById('custom-coin-symbol').value || 'CUSTOM',
+        date: document.getElementById('custom-coin-date').value,
+        time: (document.getElementById('custom-coin-time').value || '00:00') + ':00',
+      }
+    };
+  }
+  return { coin: select.value, custom_genesis: null };
+}
+
+async function castCryptoChart() {
+  const { coin, custom_genesis } = getCryptoSelection();
+  if (coin === 'CUSTOM' && (!custom_genesis || !custom_genesis.date)) {
+    alert('Please enter a genesis date for the custom coin.');
+    return;
+  }
+  const resultsDiv = document.getElementById('crypto-results');
+  resultsDiv.innerHTML = '<p style="color:var(--gold);text-align:center;padding:2rem;">⏳ Computing natal chart from genesis data...</p>';
+  try {
+    const response = await fetch('/crypto/analyze', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ coin, analysis_type: 'natal', custom_genesis })
+    });
+    const data = await response.json();
+    if (data.status === 'ok') { displayCryptoNatalChart(data); document.getElementById('crypto-ai-section').style.display = 'block'; }
+    else resultsDiv.innerHTML = `<p style="color:var(--retro-red);text-align:center;padding:2rem;">Error: ${data.message}</p>`;
+  } catch (e) { resultsDiv.innerHTML = `<p style="color:var(--retro-red);text-align:center;padding:2rem;">Connection error: ${e.message}</p>`; }
+}
+
+function displayCryptoNatalChart(data) {
+  const resultsDiv = document.getElementById('crypto-results');
+  const meta = data.meta || {};
+  let html = `<div class="placement-section">
+    <div class="section-title"><span class="icon">🪙</span>${data.name} Natal Chart</div>
+    <div style="font-size:0.8rem;color:var(--star-dim);margin:-0.5rem 0 1rem 2rem;">Genesis: ${meta.genesis_date||'?'} ${meta.genesis_time||''} UTC${meta.rectified?' <span style=\"color:var(--gold);\"> (rectified)</span>':''} — <span style="font-style:italic;">${meta.source||''}</span></div>
+    ${meta.notes?`<div style="font-size:0.8rem;color:var(--gold-dim);margin:0 0 1rem 2rem;font-style:italic;">${meta.notes}</div>`:''}
+    <table class="placement-table"><thead><tr><th>Body</th><th>IAU Constellation</th><th>Degree</th><th>House</th><th></th></tr></thead><tbody>`;
+  const planets = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+  const others = [];
+  for (const p of (data.placements||[])) {
+    if (!planets.includes(p.body)) { others.push(p); continue; }
+    const oph = p.iau_constellation==='Ophiuchus'?'color:var(--ophiuchus);':'';
+    const retro = p.retrograde?'<span class="retro">℞</span>':'';
+    html += `<tr><td class="body-name">${p.body}${retro}</td><td class="constellation-cell" style="${oph}">${p.iau_constellation}</td><td class="tropical-cell">${p.iau_degree.toFixed(2)}°</td><td class="house-cell">${p.house}</td><td class="constellation-cell" style="font-size:0.75rem;color:var(--star-dim);">${p.standard_constellation!==p.iau_constellation?'(Std: '+p.standard_constellation+')':''}</td></tr>`;
+  }
+  html += '</tbody></table></div>';
+  if (others.length) {
+    html += `<div class="placement-section"><div class="section-title"><span class="icon">⊕</span>Points & Minor Bodies</div><table class="placement-table"><thead><tr><th>Body</th><th>IAU Constellation</th><th>Degree</th><th>House</th><th></th></tr></thead><tbody>`;
+    for (const p of others) {
+      const oph = p.iau_constellation==='Ophiuchus'?'color:var(--ophiuchus);':'';
+      html += `<tr><td class="body-name">${p.body}</td><td class="constellation-cell" style="${oph}">${p.iau_constellation}</td><td class="tropical-cell">${p.iau_degree.toFixed(2)}°</td><td class="house-cell">${p.house||''}</td><td></td></tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+  if (data.aspects && data.aspects.length) {
+    html += `<div class="aspects-section"><div class="section-title"><span class="icon">∠</span>Tightest Aspects</div>`;
+    for (const a of data.aspects.slice(0,12)) {
+      const cls = 'asp-'+(a.abbr||a.aspect.substring(0,3).toUpperCase());
+      html += `<div class="aspect-row"><div class="aspect-body1">${a.body1}</div><div class="aspect-glyph ${cls}">${a.aspect}</div><div class="aspect-body2">${a.body2}</div><div class="aspect-orb">${a.orb}°</div></div>`;
+    }
+    html += '</div>';
+  }
+  if (data.sect) html += `<div style="text-align:center;color:var(--star-dim);font-size:0.8rem;margin-top:1rem;">Sect: ${data.sect} chart</div>`;
+  resultsDiv.innerHTML = html;
+}
+
+async function runCryptoAnalysis() {
+  const { coin, custom_genesis } = getCryptoSelection();
+  const analysisType = document.querySelector('input[name="crypto-analysis"]:checked').value;
+  const resultsDiv = document.getElementById('crypto-results');
+  if (analysisType === 'natal') return castCryptoChart();
+  if ((analysisType === 'synastry' || analysisType === 'compare') && !currentChart) {
+    document.getElementById('crypto-synastry-notice').style.display = 'block';
+    resultsDiv.innerHTML = '<p style="color:var(--gold);text-align:center;padding:2rem;">⚠️ Cast your natal chart first (Natal tab).</p>';
+    return;
+  }
+  document.getElementById('crypto-synastry-notice').style.display = 'none';
+  resultsDiv.innerHTML = '<p style="color:var(--gold);text-align:center;padding:2rem;">⏳ Calculating...</p>';
+  try {
+    const response = await fetch('/crypto/analyze', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ coin, analysis_type: analysisType, natal_chart: currentChart, custom_genesis })
+    });
+    const data = await response.json();
+    if (data.status === 'ok') {
+      if (analysisType === 'transits') displayCryptoTransits(data);
+      else if (analysisType === 'synastry') displayCryptoSynastry(data);
+      else if (analysisType === 'compare') displayCryptoCompare(data);
+      document.getElementById('crypto-ai-section').style.display = 'block';
+    } else resultsDiv.innerHTML = `<p style="color:var(--retro-red);text-align:center;padding:2rem;">Error: ${data.message}</p>`;
+  } catch (e) { resultsDiv.innerHTML = `<p style="color:var(--retro-red);text-align:center;padding:2rem;">Connection error: ${e.message}</p>`; }
+}
+
+function displayCryptoTransits(data) {
+  const resultsDiv = document.getElementById('crypto-results');
+  let html = `<div class="placement-section"><div class="section-title"><span class="icon">◐</span>${data.coin} — Current Transits</div>
+    <table class="placement-table"><thead><tr><th>Transit</th><th>Aspect</th><th>Natal</th><th>Orb</th><th>Phase</th><th>Exact Date</th><th>Window</th></tr></thead><tbody>`;
+  for (const t of (data.transits||[])) {
+    const pc = t.phase==='applying'?'var(--gold)':t.phase==='separating'?'var(--star-dim)':'var(--star-mid)';
+    const ac = t.aspect==='Conjunction'?'#e74c3c':t.aspect==='Opposition'?'#c0392b':t.aspect==='Square'?'#e67e22':t.aspect==='Trine'?'#2ecc71':'#3498db';
+    html += `<tr><td class="body-name">${t.transiting}</td><td style="color:${ac};font-family:var(--font-mono);font-size:0.82rem;">${t.aspect}</td><td class="body-name">${t.natal}</td><td class="tropical-cell">${t.orb.toFixed(2)}°</td><td style="color:${pc};font-size:0.8rem;font-style:italic;">${t.phase||'—'}</td><td class="tropical-cell">${t.exact_date||'—'}${t.exact_time?' '+t.exact_time:''}</td><td style="font-size:0.72rem;color:var(--star-dim);">${t.window_start||''} → ${t.window_end||''}<br>~${t.effect_duration_days||'?'}d</td></tr>`;
+  }
+  html += '</tbody></table></div>';
+  resultsDiv.innerHTML = html;
+}
+
+function displayCryptoSynastry(data) {
+  const resultsDiv = document.getElementById('crypto-results');
+  const cc = data.compatibility==='STRONG AFFINITY'?'#2ecc71':data.compatibility==='CHALLENGING'?'#e74c3c':'var(--gold)';
+  let html = `<div class="placement-section"><div class="section-title"><span class="icon">☍</span>Synastry: You × ${data.coin}</div>
+    <div style="text-align:center;padding:1rem;margin-bottom:1rem;"><div style="font-size:1.3rem;font-weight:400;color:${cc};font-family:var(--font-display);">${data.compatibility}</div><div style="font-size:0.85rem;color:var(--star-dim);margin-top:0.3rem;">${data.summary||''}</div><div style="font-family:var(--font-mono);color:var(--gold-dim);margin-top:0.5rem;">Score: ${data.score}</div></div>
+    <table class="placement-table"><thead><tr><th>Your Planet</th><th>Aspect</th><th>Coin Planet</th><th>Orb</th><th>Theme</th></tr></thead><tbody>`;
+  for (const a of (data.aspects||[])) {
+    const nc = a.nature==='harmonious'?'#2ecc71':a.nature==='challenging'?'#e74c3c':'var(--gold)';
+    html += `<tr><td class="body-name">${a.person_planet}</td><td style="color:${nc};font-family:var(--font-mono);font-size:0.82rem;">${a.aspect}</td><td class="body-name">${a.coin_planet}</td><td class="tropical-cell">${a.orb}°</td><td style="font-size:0.78rem;color:var(--star-dim);">${a.theme||''}</td></tr>`;
+  }
+  html += '</tbody></table></div>';
+  resultsDiv.innerHTML = html;
+}
+
+function displayCryptoCompare(data) {
+  const resultsDiv = document.getElementById('crypto-results');
+  let html = `<div class="placement-section"><div class="section-title"><span class="icon">⚖</span>Coin Comparison for Your Chart</div>
+    ${data.recommendation?`<div style="text-align:center;padding:0.8rem;color:var(--gold);font-style:italic;font-size:0.9rem;">${data.recommendation}</div>`:''}
+    <table class="placement-table"><thead><tr><th>#</th><th>Coin</th><th>Natal</th><th>Transit</th><th>Combined</th><th>Compatibility</th><th>Alignment</th></tr></thead><tbody>`;
+  (data.rankings||[]).forEach((r,i) => {
+    const sc = r.combined_score>5?'#2ecc71':r.combined_score<-5?'#e74c3c':'var(--star-mid)';
+    html += `<tr><td style="color:var(--gold);font-weight:500;text-align:center;">${i+1}</td><td class="body-name">${r.symbol}</td><td class="tropical-cell">${r.natal_score?.toFixed(1)||'—'}</td><td class="tropical-cell">${r.transit_score?.toFixed(1)||'—'}</td><td style="color:${sc};font-family:var(--font-mono);font-weight:500;">${r.combined_score}</td><td style="font-size:0.78rem;">${r.compatibility||''}</td><td style="font-size:0.78rem;">${r.alignment||''}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  resultsDiv.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('input[name="crypto-analysis"]').forEach(rb => {
+    rb.addEventListener('change', function() {
+      const notice = document.getElementById('crypto-synastry-notice');
+      if ((this.value==='synastry'||this.value==='compare') && !currentChart) notice.style.display = 'block';
+      else notice.style.display = 'none';
+    });
+  });
+});
+
+async function requestCryptoInterpretation() {
+  const { coin, custom_genesis } = getCryptoSelection();
+  const analysisType = document.querySelector('input[name="crypto-analysis"]:checked').value;
+  const interpDiv = document.getElementById('crypto-interpretation');
+  const contentDiv = document.getElementById('crypto-interp-content');
+  
+  interpDiv.style.display = 'block';
+  contentDiv.innerHTML = '<p style="color: var(--gold); text-align: center;">⏳ Consulting the oracle...</p>';
+  
+  const providers = getSelectedProviders();
+  
+  try {
+    const response = await fetch('/crypto/interpret', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        coin: coin,
+        analysis_type: analysisType,
+        natal_chart: currentChart,
+        providers: providers,
+        custom_genesis: custom_genesis,
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.status === 'ok') {
+      let html = '';
+      for (const [provider, interp] of Object.entries(data.interpretations || {})) {
+        const formatted = interp
+          .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--gold);">$1</strong>')
+          .replace(/\n\n/g, '</p><p>')
+          .replace(/\n/g, '<br>');
+        html += `<div style="margin-bottom: 1.5rem;"><div style="color:var(--gold);font-size:0.75rem;margin-bottom:0.3rem;">— ${provider} —</div><p>${formatted}</p></div>`;
+      }
+      contentDiv.innerHTML = html || '<p style="color:var(--star-dim);">No interpretations returned. Check your API keys in the Natal tab.</p>';
+    } else {
+      contentDiv.innerHTML = `<p style="color: var(--retro-red);">Error: ${data.message}</p>`;
+    }
+  } catch (e) {
+    contentDiv.innerHTML = `<p style="color: var(--retro-red);">Connection error: ${e.message}</p>`;
+  }
+}
+</script>
+
+<script src="/static/js/license_ui.js"></script>
+<script src="/static/js/version_notify.js"></script>
+</body>
+</html>

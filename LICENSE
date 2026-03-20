@@ -1,0 +1,45 @@
+GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
+
+Copyright (C) 2026 Stellaris-13 Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+---
+
+ADDITIONAL NOTICES:
+
+1. Swiss Ephemeris
+   This software uses the Swiss Ephemeris library.
+   Swiss Ephemeris is dual-licensed under:
+   - GNU Affero General Public License (AGPL)
+   - Swiss Ephemeris Professional License
+   
+   For more information: https://www.astro.com/swisseph/
+
+2. Fonts
+   This software uses the following fonts:
+   - Cormorant Garamond (SIL Open Font License)
+   - JetBrains Mono (SIL Open Font License)
+   - Outfit (SIL Open Font License)
+
+3. Third-Party AI Services
+   This software integrates with third-party AI services.
+   Each service is subject to its own terms and licenses.
+   Users are responsible for compliance with those terms.
+
+---
+
+The full text of the GNU Affero General Public License v3.0 is available at:
+https://www.gnu.org/licenses/agpl-3.0.html

@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellaris-13 | The 13-Sign Astronomical Ephemeris</title>
+    <meta name="description" content="The first astrology software that shows you where the planets actually are. IAU constellation boundaries. 13 signs including Ophiuchus. Own your chart forever.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-deep: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a25;
+            --serpent-gold: #d4a853;
+            --serpent-gold-dim: #a68532;
+            --serpent-glow: rgba(212, 168, 83, 0.15);
+            --text-primary: #e8e6e3;
+            --text-secondary: #9a9a9a;
+            --text-dim: #5a5a5a;
+            --border-subtle: rgba(255,255,255,0.06);
+            --border-gold: rgba(212, 168, 83, 0.3);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .constellation-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+            background-image: 
+                radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.8) 0%, transparent 100%),
+                radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.5) 0%, transparent 100%),
+                radial-gradient(1.5px 1.5px at 50% 50%, rgba(212,168,83,0.6) 0%, transparent 100%),
+                radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
+                radial-gradient(1px 1px at 80% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                radial-gradient(1.5px 1.5px at 10% 80%, rgba(212,168,83,0.4) 0%, transparent 100%),
+                radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.5) 0%, transparent 100%);
+            animation: twinkle 8s ease-in-out infinite alternate;
+        }
+        
+        @keyframes twinkle { 0% { opacity: 0.3; } 100% { opacity: 0.5; } }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 20px 0;
+            background: linear-gradient(to bottom, rgba(10,10,15,0.95) 0%, rgba(10,10,15,0) 100%);
+            backdrop-filter: blur(10px);
+        }
+        
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+        
+        .logo-symbol { font-size: 28px; color: var(--serpent-gold); }
+        
+        .logo-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.02em;
+        }
+        
+        .logo-text span { color: var(--serpent-gold); }
+        
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .nav-links a:hover { color: var(--serpent-gold); }
+        
+        .nav-cta {
+            background: var(--serpent-gold);
+            color: var(--bg-deep) !important;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        
+        .nav-cta:hover {
+            background: var(--serpent-gold-dim);
+            color: var(--bg-deep) !important;
+        }
+        
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 120px 0 80px;
+            position: relative;
+        }
+        
+        .hero-content { max-width: 800px; }
+        
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--serpent-glow);
+            border: 1px solid var(--border-gold);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--serpent-gold);
+            margin-bottom: 32px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .hero-badge::before { content: '⛎'; font-size: 16px; }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(48px, 8vw, 80px);
+            font-weight: 600;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.6s ease-out 0.1s both;
+        }
+        
+        .hero h1 .highlight { color: var(--serpent-gold); }
+        
+        .hero-subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+        
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.6s ease-out 0.3s both;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--serpent-gold);
+            color: var(--bg-deep);
+        }
+        
+        .btn-primary:hover {
+            background: #e4b863;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(212, 168, 83, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--serpent-gold);
+            color: var(--serpent-gold);
+        }
+        
+        .ophiuchus-symbol {
+            font-size: 500px;
+            color: var(--serpent-gold);
+            position: absolute;
+            right: -100px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.06;
+            font-family: serif;
+            pointer-events: none;
+        }
+        
+        .problem-section {
+            padding: 120px 0;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--serpent-gold);
+            margin-bottom: 16px;
+        }
+        
+        .problem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+        
+        @media (max-width: 768px) {
+            .problem-grid { grid-template-columns: 1fr; gap: 48px; }
+        }
+        
+        .problem-content h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 42px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+        
+        .problem-content p {
+            color: var(--text-secondary);
+            font-size: 17px;
+            margin-bottom: 16px;
+        }
+        
+        .comparison-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .comparison-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .comparison-header div {
+            padding: 16px 24px;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .comparison-header .old {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-right: 1px solid var(--border-subtle);
+        }
+        
+        .comparison-header .new {
+            background: var(--serpent-glow);
+            color: var(--serpent-gold);
+        }
+        
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .comparison-row div {
+            padding: 16px 24px;
+            font-size: 15px;
+        }
+        
+        .comparison-row div:first-child {
+            color: var(--text-dim);
+            border-right: 1px solid var(--border-subtle);
+            text-decoration: line-through;
+            text-decoration-color: rgba(239, 68, 68, 0.4);
+        }
+        
+        .comparison-row div:last-child { color: var(--text-primary); }
+        
+        .features-section { padding: 120px 0; }
+        
+        .features-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 64px;
+        }
+        
+        .features-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 48px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .features-header p {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        
+        @media (max-width: 900px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .features-grid { grid-template-columns: 1fr; } }
+        
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-gold);
+            transform: translateY(-4px);
+        }
+        
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--serpent-glow);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        
+        .pricing-section {
+            padding: 120px 0;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .pricing-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 64px;
+        }
+        
+        .pricing-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 48px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .pricing-header p {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 1100px) {
+            .pricing-grid { grid-template-columns: repeat(2, 1fr) !important; max-width: 800px !important; }
+        }
+        
+        @media (max-width: 900px) {
+            .pricing-grid { grid-template-columns: 1fr !important; max-width: 400px !important; }
+        }
+        
+        .pricing-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 40px 32px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .pricing-card:hover { border-color: var(--border-gold); }
+        
+        .pricing-card.featured {
+            border-color: var(--serpent-gold);
+            background: linear-gradient(to bottom, rgba(212, 168, 83, 0.08) 0%, var(--bg-card) 100%);
+        }
+        
+        .pricing-card.featured::before {
+            content: 'Most Popular';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--serpent-gold);
+            color: var(--bg-deep);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 100px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .pricing-tier {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .pricing-price {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .pricing-price span {
+            font-size: 20px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        
+        .pricing-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 32px;
+            min-height: 40px;
+        }
+        
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 32px;
+        }
+        
+        .pricing-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--serpent-gold);
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .pricing-features li.locked::before { content: '🔒'; }
+        .pricing-features li.locked { color: var(--text-dim); }
+        
+        .pricing-features li.crypto { color: var(--serpent-gold); font-weight: 500; }
+        .pricing-features li.crypto::before { content: '🪙'; }
+        
+        .pricing-btn {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+        
+        .byok-section { padding: 80px 0; }
+        
+        .byok-banner {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(124, 58, 237, 0.1) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 48px;
+            display: flex;
+            align-items: center;
+            gap: 48px;
+        }
+        
+        @media (max-width: 768px) {
+            .byok-banner { flex-direction: column; text-align: center; padding: 32px; }
+        }
+        
+        .byok-icon { font-size: 64px; flex-shrink: 0; }
+        
+        .byok-content h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .byok-content p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 600px;
+        }
+        
+        .byok-content p strong { color: var(--text-primary); }
+        
+        .about-section {
+            padding: 120px 0;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 64px;
+            align-items: start;
+        }
+        
+        @media (max-width: 768px) { .about-grid { grid-template-columns: 1fr; } }
+        
+        .about-symbol {
+            font-size: 200px;
+            color: var(--serpent-gold);
+            opacity: 0.2;
+            text-align: center;
+            line-height: 1;
+        }
+        
+        .about-content h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            margin-bottom: 24px;
+        }
+        
+        .about-content p {
+            color: var(--text-secondary);
+            font-size: 17px;
+            margin-bottom: 16px;
+        }
+        
+        .about-content blockquote {
+            border-left: 3px solid var(--serpent-gold);
+            padding-left: 24px;
+            margin: 32px 0;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 24px;
+            font-style: italic;
+            color: var(--text-primary);
+        }
+        
+        footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 64px 0 32px;
+        }
+        
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 48px;
+            margin-bottom: 48px;
+        }
+        
+        @media (max-width: 768px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 480px) { .footer-grid { grid-template-columns: 1fr; } }
+        
+        .footer-brand p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 16px;
+            max-width: 300px;
+        }
+        
+        .footer-col h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        
+        .footer-col a {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 12px;
+            transition: color 0.2s;
+        }
+        
+        .footer-col a:hover { color: var(--serpent-gold); }
+        
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 32px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+        
+        @media (max-width: 600px) {
+            .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
+        }
+        
+        .footer-bottom a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+        
+        .footer-bottom a:hover { color: var(--serpent-gold); }
+        
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-toggle { display: block; }
+            .nav-links { display: none; }
+            .nav-links.active {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0; right: 0;
+                background: var(--bg-deep);
+                padding: 24px;
+                border-bottom: 1px solid var(--border-subtle);
+            }
+        }
+        
+        /* CRYPTO SECTION */
+        .crypto-section {
+            padding: 100px 0;
+            background: linear-gradient(to bottom, rgba(212, 168, 83, 0.03) 0%, transparent 100%);
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .crypto-banner { text-align: center; }
+        
+        .crypto-badge {
+            display: inline-block;
+            background: var(--serpent-glow);
+            border: 1px solid var(--border-gold);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--serpent-gold);
+            margin-bottom: 24px;
+        }
+        
+        .crypto-section h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 42px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .crypto-section h2 .highlight { color: var(--serpent-gold); }
+        
+        .crypto-subtitle {
+            color: var(--text-secondary);
+            font-size: 18px;
+            max-width: 700px;
+            margin: 0 auto 48px;
+        }
+        
+        .crypto-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto 40px;
+        }
+        
+        @media (max-width: 900px) {
+            .crypto-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 500px) {
+            .crypto-grid { grid-template-columns: 1fr; }
+        }
+        
+        .crypto-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px 16px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .crypto-card:hover { border-color: var(--border-gold); }
+        .crypto-card.featured { border-color: var(--serpent-gold); background: rgba(212, 168, 83, 0.05); }
+        
+        .crypto-symbol {
+            font-size: 32px;
+            margin-bottom: 8px;
+            color: var(--serpent-gold);
+        }
+        
+        .crypto-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        
+        .crypto-data {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+        
+        .crypto-sign {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--serpent-gold);
+        }
+        
+        .crypto-cta {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .crypto-cta strong { color: var(--text-primary); }
+        
+        .crypto-features {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin: 32px 0;
+            padding: 24px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .crypto-feature {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .crypto-feature .feature-icon {
+            font-size: 18px;
+        }
+        
+        /* BLUEPRINT SECTION */
+        .blueprint-section {
+            padding: 100px 0;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .blueprint-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+        
+        .blueprint-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 42px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .blueprint-header p {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+        
+        .blueprint-preview {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 800px) {
+            .blueprint-preview { grid-template-columns: 1fr; }
+        }
+        
+        .blueprint-toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 32px;
+        }
+        
+        .blueprint-toc h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--serpent-gold);
+        }
+        
+        .blueprint-toc ul {
+            list-style: none;
+        }
+        
+        .blueprint-toc li {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .blueprint-toc li:last-child { border-bottom: none; }
+        
+        .blueprint-toc li.sub-item {
+            padding-left: 24px;
+            font-size: 13px;
+            color: var(--text-dim);
+            border-bottom: none;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+        
+        .blueprint-toc .sample-download {
+            display: block;
+            margin-top: 24px;
+            text-align: center;
+            padding: 14px 24px;
+            font-size: 14px;
+        }
+        
+        .blueprint-toc .page {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--serpent-gold);
+            margin-right: 12px;
+        }
+        
+        .sample-cosmic {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(212, 168, 83, 0.08);
+            border-radius: 8px;
+            border: 1px solid var(--border-gold);
+        }
+        
+        .cosmic-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--serpent-gold);
+            margin-bottom: 10px;
+        }
+        
+        .cosmic-item {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 4px 0;
+        }
+        
+        .blueprint-sample {
+            perspective: 1000px;
+        }
+        
+        .sample-page {
+            background: linear-gradient(135deg, #1a1a25 0%, #12121a 100%);
+            border: 1px solid var(--border-gold);
+            border-radius: 8px;
+            padding: 32px;
+            transform: rotateY(-5deg);
+            box-shadow: 20px 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        .sample-header {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 12px;
+            letter-spacing: 4px;
+            color: var(--serpent-gold);
+            margin-bottom: 16px;
+        }
+        
+        .sample-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .sample-data {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+        }
+        
+        .sample-highlight {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 14px;
+        }
+        
+        .sample-highlight .label { color: var(--text-secondary); }
+        .sample-highlight .position { 
+            font-family: 'JetBrains Mono', monospace; 
+            color: var(--serpent-gold); 
+        }
+        
+        .sample-text {
+            margin-top: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-style: italic;
+            line-height: 1.7;
+        }
+        
+        .blueprint-note {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 14px;
+            margin-top: 40px;
+        }
+        
+        /* RECTIFICATION SECTION */
+        .rectification-section {
+            padding: 100px 0;
+            background: linear-gradient(to bottom, rgba(212, 168, 83, 0.02) 0%, transparent 100%);
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .rectification-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+        
+        .rectification-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 42px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .rectification-header p {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+        
+        .rectification-preview {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 800px) {
+            .rectification-preview { grid-template-columns: 1fr; }
+        }
+        
+        .rectification-input, .rectification-output {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 32px;
+        }
+        
+        .rectification-input h3, .rectification-output h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--serpent-gold);
+        }
+        
+        .rectification-input ul {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+        
+        .rectification-input li {
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .rectification-input li::before {
+            content: '→';
+            color: var(--serpent-gold);
+            margin-right: 10px;
+        }
+        
+        .event-examples {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .event {
+            background: rgba(255,255,255,0.03);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+        
+        .rectification-result {
+            background: rgba(212, 168, 83, 0.08);
+            border: 1px solid var(--border-gold);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .result-time, .result-confidence {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+        
+        .result-time .label, .result-confidence .label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .result-time .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--serpent-gold);
+        }
+        
+        .result-confidence .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            color: #4ade80;
+        }
+        
+        .result-method {
+            font-size: 12px;
+            color: var(--text-dim);
+            text-align: center;
+            margin-top: 8px;
+        }
+        
+        .transit-matches h4 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .transit-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 13px;
+        }
+        
+        .transit-row:last-child { border-bottom: none; }
+        
+        .transit-row .event { 
+            color: var(--text-secondary); 
+            background: none;
+            padding: 0;
+            font-style: normal;
+        }
+        .transit-row .transit { 
+            font-family: 'JetBrains Mono', monospace; 
+            color: var(--serpent-gold); 
+            font-size: 12px;
+        }
+        
+        .rectification-note {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 14px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="constellation-bg"></div>
+    
+    <nav>
+        <div class="container">
+            <a href="/" class="logo">
+                <span class="logo-symbol">⛎</span>
+                <span class="logo-text">Stellaris-<span>13</span></span>
+            </a>
+            <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')">☰</button>
+            <div class="nav-links">
+                <a href="#crypto">Crypto</a>
+                <a href="#blueprint">Blueprint</a>
+                <a href="#features">Features</a>
+                <a href="#rectification">Rectification</a>
+                <a href="#pricing">Pricing</a>
+                <a href="/app" class="nav-cta">Launch App</a>
+            </div>
+        </div>
+    </nav>
+    
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">Includes the 13th Sign: Ophiuchus</div>
+                <h1>
+                    The stars don't lie.<br>
+                    <span class="highlight">The systems that read them do.</span>
+                </h1>
+                <p class="hero-subtitle">
+                    AI-powered astrology that shows where the planets actually are. 
+                    Get your 17-page Celestial Blueprint. Chat with your chart. 
+                    Know when to move—in markets and in life.
+                </p>
+                <div class="hero-cta">
+                    <a href="/app" class="btn btn-primary">Launch App →</a>
+                    <a href="#blueprint" class="btn btn-secondary">See Sample Report</a>
+                </div>
+            </div>
+        </div>
+        <div class="ophiuchus-symbol">⛎</div>
+    </section>
+    
+    <!-- CRYPTO FEATURE SECTION -->
+    <section class="crypto-section" id="crypto">
+        <div class="container">
+            <div class="crypto-banner">
+                <div class="crypto-badge">🪙 Professional + Astrologer Tiers</div>
+                <h2>The only astrology software that charts <span class="highlight">cryptocurrencies</span></h2>
+                <p class="crypto-subtitle">
+                    Every coin has a birth chart. Every coin responds to transits. We validated it retroactively—Mt. Gox, The Merge, XRP's ATH. The correlations are real.
+                </p>
+                <div class="crypto-grid">
+                    <div class="crypto-card">
+                        <div class="crypto-symbol">₿</div>
+                        <div class="crypto-name">Bitcoin</div>
+                        <div class="crypto-data">Genesis: Jan 3, 2009</div>
+                        <div class="crypto-sign">☉ Sagittarius 16.8°</div>
+                    </div>
+                    <div class="crypto-card">
+                        <div class="crypto-symbol">Ξ</div>
+                        <div class="crypto-name">Ethereum</div>
+                        <div class="crypto-data">Genesis: Jul 30, 2015</div>
+                        <div class="crypto-sign">☉ Cancer 8.8°</div>
+                    </div>
+                    <div class="crypto-card">
+                        <div class="crypto-symbol">✕</div>
+                        <div class="crypto-name">XRP</div>
+                        <div class="crypto-data">Genesis: Jun 2, 2012</div>
+                        <div class="crypto-sign">☉ Taurus 18.2°</div>
+                    </div>
+                    <div class="crypto-card featured">
+                        <div class="crypto-symbol">ɱ</div>
+                        <div class="crypto-name">Monero</div>
+                        <div class="crypto-data">Rectified: Apr 19, 2014</div>
+                        <div class="crypto-sign">☉ Aries 0.27° · ☽ Ophiuchus</div>
+                    </div>
+                </div>
+                <div class="crypto-features">
+                    <div class="crypto-feature">
+                        <span class="feature-icon">📊</span>
+                        <span>Coin natal charts with validated genesis times</span>
+                    </div>
+                    <div class="crypto-feature">
+                        <span class="feature-icon">🔄</span>
+                        <span>Real-time transit analysis for any cryptocurrency</span>
+                    </div>
+                    <div class="crypto-feature">
+                        <span class="feature-icon">💫</span>
+                        <span>Person-to-coin synastry — find YOUR coins</span>
+                    </div>
+                </div>
+                <p class="crypto-cta">
+                    <strong>Which coins are cosmically aligned with YOUR chart?</strong> Synastry reveals when your timing matches the coin's timing. Available in Professional and Astrologer tiers.
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <section class="problem-section">
+        <div class="container">
+            <div class="problem-grid">
+                <div class="problem-content">
+                    <div class="section-label">The Problem</div>
+                    <h2>Astrology software hasn't evolved in 30 years</h2>
+                    <p>
+                        The "industry standard" tools are Windows programs from the 90s with static text interpretations, 
+                        no AI capabilities, and interfaces that belong in a museum.
+                    </p>
+                    <p>
+                        Stellaris-13 is what happens when you rebuild astrology software from scratch for the AI era—with 
+                        conversational chart reading, automated birth time rectification, and the 13-sign system mainstream 
+                        astrology pretends doesn't exist.
+                    </p>
+                </div>
+                <div class="comparison-box">
+                    <div class="comparison-header">
+                        <div class="old">Legacy Software</div>
+                        <div class="new">Stellaris-13</div>
+                    </div>
+                    <div class="comparison-row">
+                        <div>Static interpretations</div>
+                        <div>Chat with your chart (AI)</div>
+                    </div>
+                    <div class="comparison-row">
+                        <div>Manual rectification</div>
+                        <div>AI-powered birth time rectification</div>
+                    </div>
+                    <div class="comparison-row">
+                        <div>12 signs, tropical only</div>
+                        <div>13 signs, IAU astronomical</div>
+                    </div>
+                    <div class="comparison-row">
+                        <div>Windows 95 interface</div>
+                        <div>Modern web, runs anywhere</div>
+                    </div>
+                    <div class="comparison-row">
+                        <div>Their servers, their data</div>
+                        <div>Your keys, your data (BYOK)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- BLUEPRINT PREVIEW SECTION -->
+    <section class="blueprint-section" id="blueprint">
+        <div class="container">
+            <div class="blueprint-header">
+                <div class="section-label">Sample Output</div>
+                <h2>Your Complete Celestial Blueprint</h2>
+                <p>Not a horoscope. Not generic fluff. A 17+ page astronomical portrait that includes phenomena most astrologers don't even check.</p>
+            </div>
+            <div class="blueprint-preview">
+                <div class="blueprint-toc">
+                    <h3>What's Inside:</h3>
+                    <ul>
+                        <li><span class="page">Ch.1</span> Full Natal Chart — IAU Positions</li>
+                        <li><span class="page">Ch.2</span> Core Identity Analysis (including Ophiuchus)</li>
+                        <li><span class="page">Ch.3</span> Cosmic Convergence Events:</li>
+                        <li class="sub-item"><span class="page">•</span> Eclipses active at birth</li>
+                        <li class="sub-item"><span class="page">•</span> Comets (Halley's, etc.)</li>
+                        <li class="sub-item"><span class="page">•</span> Meteor showers (Geminids, Perseids)</li>
+                        <li class="sub-item"><span class="page">•</span> Prenatal syzygy (seed moon)</li>
+                        <li><span class="page">Ch.4</span> Sign Distribution — Full Correction</li>
+                        <li><span class="page">Ch.5</span> Karmic Analysis:</li>
+                        <li class="sub-item"><span class="page">•</span> North/South Nodes (IAU)</li>
+                        <li class="sub-item"><span class="page">•</span> Chiron (the wounded healer)</li>
+                        <li class="sub-item"><span class="page">•</span> Black Moon Lilith</li>
+                        <li class="sub-item"><span class="page">•</span> Royal Stars conjunctions</li>
+                        <li><span class="page">Ch.6</span> Life Mission Synthesis</li>
+                    </ul>
+                </div>
+                <div class="blueprint-sample">
+                    <div class="sample-page">
+                        <div class="sample-header">CELESTIAL BLUEPRINT</div>
+                        <div class="sample-name">TAO</div>
+                        <div class="sample-data">December 12, 1985 · 10:47 AM CST · Des Moines, IA</div>
+                        <div class="sample-highlight">
+                            <span class="label">Sun</span>
+                            <span class="position">⛎ Ophiuchus 13.13°</span>
+                        </div>
+                        <div class="sample-highlight">
+                            <span class="label">Moon</span>
+                            <span class="position">♐ Sagittarius 3.47°</span>
+                        </div>
+                        <div class="sample-highlight">
+                            <span class="label">Rising</span>
+                            <span class="position">♑ Capricornus 11.20°</span>
+                        </div>
+                        <div class="sample-cosmic">
+                            <div class="cosmic-label">Cosmic Events at Birth:</div>
+                            <div class="cosmic-item">☄️ Halley's Comet approaching perihelion</div>
+                            <div class="cosmic-item">🌑 45 days post total lunar eclipse</div>
+                            <div class="cosmic-item">✨ Geminid meteor shower peak</div>
+                        </div>
+                        <div class="sample-text">
+                            "Your Sun at 13.13° Ophiuchus places you in the hidden 13th sign—the Serpent Bearer, 
+                            the healer who was erased from the zodiac. The degree is 13.13° in the 13th constellation. 
+                            This is not coincidence; this is signature..."
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="blueprint-note">
+                Every blueprint is unique. Generated fresh by AI from your precise birth data, cross-referenced with astronomical events. 
+                Exported as a professional .docx document you own forever.
+            </p>
+        </div>
+    </section>
+    
+    <section class="features-section" id="features">
+        <div class="container">
+            <div class="features-header">
+                <div class="section-label">Capabilities</div>
+                <h2>Features that don't exist anywhere else</h2>
+                <p>Built from scratch for the AI era. No legacy code. No compromises.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>Chat With Your Chart</h3>
+                    <p>Ask questions. Get answers. The first conversational astrology interface. No other software has this.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🕰️</div>
+                    <h3>AI Birth Time Rectification</h3>
+                    <p>The holy grail of astrology. Input life events, get your precise birth time. Usually costs $500+ from a professional.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⛎</div>
+                    <h3>13-Sign IAU System</h3>
+                    <p>Full Ophiuchus support with actual constellation boundaries. See where the planets really are.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔮</div>
+                    <h3>Past Life Reading</h3>
+                    <p>South Node, retrogrades, 12th house, Chiron, and Lilith synthesis. Automated karmic analysis.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Multi-Provider AI</h3>
+                    <p>Claude, Mistral, Groq, Fireworks, or 100% local with Ollama. Your choice. Your keys.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Three Zodiac Systems</h3>
+                    <p>Tropical, sidereal, and IAU side-by-side. The only software that shows all three.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💑</div>
+                    <h3>Synastry & Composites</h3>
+                    <p>Relationship analysis with AI interpretation. Aspect grids, compatibility scores, and synthesis.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌙</div>
+                    <h3>Transits & Progressions</h3>
+                    <p>Current sky against your chart. Know what's activating now with AI context.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Privacy Architecture</h3>
+                    <p>No accounts. No tracking. No server storage. Air-gapped compatible. GDPR/CCPA compliant by design.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- RECTIFICATION PREVIEW SECTION -->
+    <section class="rectification-section" id="rectification">
+        <div class="container">
+            <div class="rectification-header">
+                <div class="section-label">Birth Time Rectification</div>
+                <h2>Don't know your exact birth time? We'll find it.</h2>
+                <p>Input your life events. The AI tests thousands of possible birth times against your actual history. The one that correlates best is likely your true birth time.</p>
+            </div>
+            <div class="rectification-preview">
+                <div class="rectification-input">
+                    <h3>You Provide:</h3>
+                    <ul>
+                        <li>Birth date & location (required)</li>
+                        <li>Approximate time range ("morning" or "10am-2pm")</li>
+                        <li>5+ major life events with dates</li>
+                    </ul>
+                    <div class="event-examples">
+                        <div class="event">"Started college - Aug 2004"</div>
+                        <div class="event">"First child born - Mar 2012"</div>
+                        <div class="event">"Major career change - Jan 2019"</div>
+                        <div class="event">"Moved across country - Sep 2021"</div>
+                    </div>
+                </div>
+                <div class="rectification-output">
+                    <h3>You Get:</h3>
+                    <div class="rectification-result">
+                        <div class="result-time">
+                            <span class="label">Rectified Time:</span>
+                            <span class="value">10:47:23 AM</span>
+                        </div>
+                        <div class="result-confidence">
+                            <span class="label">Confidence:</span>
+                            <span class="value">94.7%</span>
+                        </div>
+                        <div class="result-method">Based on 847 transit calculations</div>
+                    </div>
+                    <div class="transit-matches">
+                        <h4>Top Transit Correlations:</h4>
+                        <div class="transit-row">
+                            <span class="event">Started college</span>
+                            <span class="transit">Jupiter ☌ MC (0.3°)</span>
+                        </div>
+                        <div class="transit-row">
+                            <span class="event">First child</span>
+                            <span class="transit">Jupiter ☌ 5H cusp (0.8°)</span>
+                        </div>
+                        <div class="transit-row">
+                            <span class="event">Career change</span>
+                            <span class="transit">Pluto ☌ Sun (1.2°)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="rectification-note">
+                Professional rectification costs $300-500 and takes weeks. Stellaris-13 does it in minutes, shows you the math, and lets you verify it yourself.
+            </p>
+        </div>
+    </section>
+
+    <section class="byok-section">
+        <div class="container">
+            <div class="byok-banner">
+                <div class="byok-icon">🔑</div>
+                <div class="byok-content">
+                    <h3>Bring Your Own Key</h3>
+                    <p>
+                        AI features use <strong>your API keys</strong>—Claude, Mistral, Fireworks, Groq, or run 100% local with Ollama. 
+                        No subscription. No data harvesting. <strong>You control everything.</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="pricing-section" id="pricing">
+        <div class="container">
+            <div class="pricing-header">
+                <div class="section-label">Pricing</div>
+                <h2>Start free. Upgrade when ready.</h2>
+                <p>One-time purchase. Lifetime ownership. No subscriptions. No data harvesting.</p>
+            </div>
+            <div class="pricing-grid" style="grid-template-columns: repeat(4, 1fr); max-width: 1200px;">
+                <div class="pricing-card">
+                    <div class="pricing-tier">Free</div>
+                    <div class="pricing-price">$0</div>
+                    <div style="font-size: 12px; color: var(--serpent-gold); letter-spacing: 0.08em; margin-top: -4px; margin-bottom: 12px;">FOREVER</div>
+                    <div class="pricing-desc">The real sky. No gatekeeping.</div>
+                    <ul class="pricing-features">
+                        <li>Full GUI application</li>
+                        <li>All 3 zodiac systems</li>
+                        <li>Natal chart calculation</li>
+                        <li>Unlimited transits</li>
+                        <li>AI interpretation (BYOK)</li>
+                        <li>Basic synastry</li>
+                        <li style="color: var(--serpent-gold);">Celestial Blueprint — $13</li>
+                        <li class="locked">Chart chat</li>
+                        <li class="locked">Past life reading</li>
+                        <li class="locked">Rectification</li>
+                        <li class="locked">Crypto charts</li>
+                    </ul>
+                    <a href="https://payhip.com/b/uV9U1" class="btn btn-primary pricing-btn" target="_blank">Download Free →</a>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-tier">Personal</div>
+                    <div class="pricing-price">$649</div>
+                    <div style="font-size: 12px; color: var(--serpent-gold); letter-spacing: 0.08em; margin-top: -4px; margin-bottom: 12px;">ONE-TIME PURCHASE</div>
+                    <div class="pricing-desc">Serious self-discovery</div>
+                    <ul class="pricing-features">
+                        <li>Everything in Free</li>
+                        <li class="crypto" style="color: var(--serpent-gold); font-weight: 600;">Chat with your chart (AI conversation)</li>
+                        <li>Celestial Blueprint (17+ pages, included)</li>
+                        <li>Past life reading</li>
+                        <li>Full synastry with AI interpretation</li>
+                        <li>Lifetime updates</li>
+                        <li class="locked">Rectification</li>
+                        <li class="locked">Crypto charts & synastry</li>
+                    </ul>
+                    <a href="https://payhip.com/b/uFaVf" class="btn btn-primary pricing-btn" target="_blank">Get Personal</a>
+                </div>
+                <div class="pricing-card featured">
+                    <div class="pricing-tier">Professional</div>
+                    <div class="pricing-price">$1,497</div>
+                    <div style="font-size: 12px; color: var(--serpent-gold); letter-spacing: 0.08em; margin-top: -4px; margin-bottom: 12px;">ONE-TIME PURCHASE</div>
+                    <div class="pricing-desc">For practicing astrologers</div>
+                    <ul class="pricing-features">
+                        <li>Everything in Personal</li>
+                        <li class="crypto" style="color: var(--serpent-gold); font-weight: 600;">Birth time rectification</li>
+                        <li>Commercial use rights</li>
+                        <li class="locked">Crypto charts & synastry</li>
+                    </ul>
+                    <p style="font-size: 12px; color: var(--text-dim); margin-top: 16px; line-height: 1.5;">Offer rectification services to clients. A tool most astrologers don't have.</p>
+                    <a href="https://payhip.com/b/1HALp" class="btn btn-primary pricing-btn" target="_blank">Get Professional</a>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-tier">Astrologer</div>
+                    <div class="pricing-price">$2,497</div>
+                    <div style="font-size: 12px; color: var(--serpent-gold); letter-spacing: 0.08em; margin-top: -4px; margin-bottom: 12px;">ONE-TIME PURCHASE</div>
+                    <div class="pricing-desc">The complete toolkit</div>
+                    <ul class="pricing-features">
+                        <li>Everything in Professional</li>
+                        <li class="crypto" style="color: var(--serpent-gold); font-weight: 600;">Crypto natal charts (24+ coins)</li>
+                        <li class="crypto">Crypto transit analysis (exact dates)</li>
+                        <li class="crypto">Person-to-coin synastry</li>
+                        <li class="crypto">Custom coin input (any genesis)</li>
+                        <li class="crypto">Multi-coin comparison</li>
+                    </ul>
+                    <a href="https://payhip.com/b/gQZWH" class="btn btn-primary pricing-btn" target="_blank">Get Astrologer</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="about-section" id="about">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-symbol">⛎</div>
+                <div class="about-content">
+                    <div class="section-label">About</div>
+                    <h2>Built by an Ophiuchus, for the 13th sign</h2>
+                    <p>
+                        Stellaris-13 was created by TAO, a developer born on December 12, 1985—when the Sun was at 
+                        13.13° Ophiuchus according to IAU boundaries. The mainstream astrology world told him he was a 
+                        "Sagittarius." The stars said otherwise.
+                    </p>
+                    <p>
+                        Built on The Forge—a local AI infrastructure running 24 models on consumer hardware—Stellaris-13 
+                        embodies the same principles as its creator: sovereignty, truth, and the refusal to accept 
+                        systems that ignore reality.
+                    </p>
+                    <blockquote>
+                        "The excluded one built the tool to prove the excluded exists."
+                    </blockquote>
+                    <p>
+                        <a href="/about/founder" style="color: var(--serpent-gold);">Read more about the founder →</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <span class="logo-symbol">⛎</span>
+                        <span class="logo-text">Stellaris-<span>13</span></span>
+                    </a>
+                    <p>The 13-sign astronomical ephemeris. Own your chart. Know the truth.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <a href="/app">Launch App</a>
+                    <a href="#features">Features</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="/affiliates">Affiliates</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Legal</h4>
+                    <a href="/legal/privacy">Privacy Policy</a>
+                    <a href="/legal/terms">Terms of Service</a>
+                    <a href="/legal/disclaimer">Disclaimer</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Connect</h4>
+                    <a href="https://github.com/theforgeinitiative/stellaris-13">GitHub</a>
+                    <a href="/about/founder">About Founder</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div>© 2026 The Forge Initiative. All rights reserved.</div>
+                <div>v2.7.3</div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

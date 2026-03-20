@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "language": "es",
+    "name": "Español",
+    "direction": "ltr"
+  },
+  "app": {
+    "title": "Stellaris-13",
+    "subtitle": "Efemérides Astronómicas",
+    "tagline": "Calculadora del zodiaco de 13 signos usando límites de constelaciones de la UAI"
+  },
+  "nav": {
+    "natal": "Carta Natal",
+    "synastry": "Sinastría",
+    "transits": "Tránsitos",
+    "rectify": "Rectificar Hora",
+    "about": "Acerca de"
+  },
+  "form": {
+    "name": "Nombre",
+    "date": "Fecha de Nacimiento",
+    "time": "Hora",
+    "latitude": "Latitud",
+    "longitude": "Longitud",
+    "timezone": "Diferencia UTC",
+    "calculate": "Calcular Carta",
+    "search_location": "Buscar ubicación..."
+  },
+  "legal": {
+    "terms": "Términos de Servicio",
+    "privacy": "Política de Privacidad",
+    "disclaimer": "Solo para entretenimiento. No sustituye el consejo profesional.",
+    "cookie_notice": "Este sitio usa almacenamiento del navegador para guardar sus cartas y preferencias.",
+    "accept": "Aceptar",
+    "decline": "Rechazar"
+  }
+}

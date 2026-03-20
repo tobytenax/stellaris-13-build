@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "language": "en",
+    "name": "English",
+    "direction": "ltr"
+  },
+  "app": {
+    "title": "Stellaris-13",
+    "subtitle": "Astronomical Ephemeris",
+    "tagline": "The 13-sign zodiac calculator using IAU constellation boundaries"
+  },
+  "nav": {
+    "natal": "Natal Chart",
+    "synastry": "Synastry",
+    "transits": "Transits",
+    "rectify": "Rectify Time",
+    "about": "About"
+  },
+  "form": {
+    "name": "Name",
+    "date": "Date of Birth",
+    "time": "Time",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "timezone": "UTC Offset",
+    "calculate": "Cast Chart",
+    "search_location": "Search location..."
+  },
+  "chart": {
+    "placements": "Placements",
+    "aspects": "Aspects",
+    "houses": "Houses",
+    "tropical": "Tropical",
+    "standard_13": "Standard 13-Sign",
+    "iau": "IAU Astronomical",
+    "retrograde": "Retrograde",
+    "day_chart": "Day Chart",
+    "night_chart": "Night Chart"
+  },
+  "constellations": {
+    "Aries": "Aries",
+    "Taurus": "Taurus",
+    "Gemini": "Gemini",
+    "Cancer": "Cancer",
+    "Leo": "Leo",
+    "Virgo": "Virgo",
+    "Libra": "Libra",
+    "Scorpius": "Scorpius",
+    "Ophiuchus": "Ophiuchus",
+    "Sagittarius": "Sagittarius",
+    "Capricornus": "Capricornus",
+    "Aquarius": "Aquarius",
+    "Pisces": "Pisces"
+  },
+  "planets": {
+    "Sun": "Sun",
+    "Moon": "Moon",
+    "Mercury": "Mercury",
+    "Venus": "Venus",
+    "Mars": "Mars",
+    "Jupiter": "Jupiter",
+    "Saturn": "Saturn",
+    "Uranus": "Uranus",
+    "Neptune": "Neptune",
+    "Pluto": "Pluto",
+    "North Node": "North Node",
+    "South Node": "South Node",
+    "Chiron": "Chiron",
+    "Lilith": "Lilith"
+  },
+  "aspects": {
+    "Conjunction": "Conjunction",
+    "Opposition": "Opposition",
+    "Trine": "Trine",
+    "Square": "Square",
+    "Sextile": "Sextile",
+    "Quincunx": "Quincunx"
+  },
+  "interpretation": {
+    "title": "AI Interpretation",
+    "comprehensive": "Full Deep Dive",
+    "overview": "Overview",
+    "ophiuchus": "Ophiuchus Focus",
+    "past_life": "Past Life Reading",
+    "loading": "Consulting the oracle...",
+    "select_providers": "Select AI Providers"
+  },
+  "legal": {
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "disclaimer": "For entertainment purposes only. Not a substitute for professional advice.",
+    "cookie_notice": "This site uses browser storage to save your charts and preferences.",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "errors": {
+    "no_chart": "No chart to display",
+    "calculation_failed": "Calculation failed",
+    "api_error": "API connection error",
+    "invalid_date": "Invalid date format",
+    "invalid_coordinates": "Invalid coordinates"
+  },
+  "footer": {
+    "built_by": "Built for the stars by",
+    "version": "Version"
+  }
+}

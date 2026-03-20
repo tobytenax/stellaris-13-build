@@ -1,0 +1,79 @@
+# Stellaris-13 Docker Compose
+# Production deployment configuration
+
+version: '3.8'
+
+services:
+  stellaris:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stellaris-13
+    restart: unless-stopped
+    ports:
+      - "13013:13013"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./saved_charts:/app/saved_charts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:13013/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - stellaris-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stellaris.rule=Host(`stellaris.yourdomain.com`)"
+      - "traefik.http.routers.stellaris.tls=true"
+      - "traefik.http.routers.stellaris.tls.certresolver=letsencrypt"
+
+  # Optional: Reverse proxy with automatic HTTPS
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/acme.json:/acme.json
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=your@email.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+    networks:
+      - stellaris-net
+    profiles:
+      - with-proxy
+
+networks:
+  stellaris-net:
+    driver: bridge
+
+# Usage:
+# 
+# Basic (no HTTPS):
+#   docker-compose up -d stellaris
+#
+# With Traefik HTTPS proxy:
+#   docker-compose --profile with-proxy up -d
+#
+# Environment variables (.env file):
+#   SECRET_KEY=your-secret-key-here
+#   MISTRAL_API_KEY=optional-server-side-key
+#   ANTHROPIC_API_KEY=optional-server-side-key

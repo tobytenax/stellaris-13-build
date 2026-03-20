@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }} — Stellaris-13</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #0a0a0f;
+  --deep: #0f0f1a;
+  --nebula: #141425;
+  --dust: #1a1a30;
+  --star-dim: #3a3a5c;
+  --star-mid: #7a7aaa;
+  --star-bright: #c8c8e8;
+  --star-white: #eeeef8;
+  --gold: #d4a847;
+  --gold-dim: #8a7030;
+  --ophiuchus: #9b59b6;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--void);
+  color: var(--star-bright);
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+header {
+  text-align: center;
+  padding: 2rem 0;
+  border-bottom: 1px solid var(--dust);
+  margin-bottom: 2rem;
+}
+
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  color: var(--gold);
+  text-decoration: none;
+}
+
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--star-white);
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: var(--gold);
+  margin: 2rem 0 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--dust);
+}
+
+h3 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--star-white);
+  margin: 1.5rem 0 0.8rem;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+ul, ol {
+  margin: 1rem 0 1rem 2rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+a {
+  color: var(--ophiuchus);
+}
+
+a:hover {
+  color: var(--gold);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+th, td {
+  padding: 0.8rem;
+  text-align: left;
+  border: 1px solid var(--dust);
+}
+
+th {
+  background: var(--nebula);
+  color: var(--gold);
+}
+
+tr:nth-child(even) {
+  background: var(--deep);
+}
+
+code {
+  background: var(--nebula);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+}
+
+pre {
+  background: var(--nebula);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--dust);
+}
+
+pre code {
+  background: none;
+  padding: 0;
+}
+
+blockquote {
+  border-left: 3px solid var(--ophiuchus);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: var(--star-mid);
+}
+
+strong {
+  color: var(--star-white);
+  font-weight: 500;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--dust);
+  margin: 2rem 0;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 0.8rem 1.5rem;
+  background: var(--nebula);
+  color: var(--gold);
+  text-decoration: none;
+  border-radius: 8px;
+  border: 1px solid var(--dust);
+  transition: all 0.3s;
+}
+
+.back-link:hover {
+  background: var(--gold-dim);
+  color: var(--star-white);
+}
+
+footer {
+  text-align: center;
+  padding: 2rem;
+  margin-top: 3rem;
+  border-top: 1px solid var(--dust);
+  color: var(--star-dim);
+  font-size: 0.85rem;
+}
+
+footer a {
+  color: var(--star-mid);
+  margin: 0 0.5rem;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  .back-link, header, footer {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <a href="/" class="logo">✦ Stellaris-13</a>
+  </header>
+  
+  <main>
+    <h1>{{ title }}</h1>
+    
+    <article>
+      {{ content | safe }}
+    </article>
+    
+    <a href="/" class="back-link">← Back to Stellaris-13</a>
+  </main>
+  
+  <footer>
+    <a href="/privacy">Privacy</a> |
+    <a href="/terms">Terms</a> |
+    <a href="/disclaimer">Disclaimer</a> |
+    <a href="/about">About</a>
+    <br><br>
+    © 2026 Stellaris-13 — 13-Sign Astronomical Ephemeris
+  </footer>
+</div>
+
+</body>
+</html>
