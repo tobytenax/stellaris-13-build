@@ -3,8 +3,9 @@
 import os, re, shutil, zipfile
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent / "stellaris-13-v2.7 (4).3/stellaris-13-v2.4"
-BUILD_DIR = Path(__file__).resolve().parent.parent / "builds"
+_BASE = Path(__file__).resolve().parent.parent
+ROOT_DIR = _BASE if (_BASE / "app.py").exists() else _BASE / "stellaris-13-v2.7 (4).3/stellaris-13-v2.4"
+BUILD_DIR = _BASE / "builds"
 VERSION = "2.8.0"
 
 CORE_FILES = [
