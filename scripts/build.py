@@ -67,6 +67,34 @@ def build_tier(tier):
         c = vjs.read_text()
         c = re.sub(r"const CURRENT_VERSION = '[^']+';", f"const CURRENT_VERSION = '{VERSION}';", c)
         vjs.write_text(c)
+
+    # Automatically write the launcher script for PyInstaller
+    launcher_code = """import sys, os, threading, webbrowser, time, signal
+if getattr(sys, 'frozen', False):
+    BASE_DIR = sys._MEIPASS
+    os.chdir(BASE_DIR)
+    DATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'Stellaris-13')
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.environ['STELLARIS_DATA_DIR'] = DATA_DIR
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(BASE_DIR)
+
+def open_browser():
+    time.sleep(3)
+    webbrowser.open('http://localhost:13013')
+
+signal.signal(signal.SIGINT, lambda s,f: sys.exit(0))
+
+if __name__ == '__main__':
+    print('\\n  Stellaris-13 is starting...')
+    print('  Your browser will open automatically.\\n')
+    threading.Thread(target=open_browser, daemon=True).start()
+    from app import app
+    app.run(host='127.0.0.1', port=13013, debug=False, use_reloader=False)
+"""
+    (td / "stellaris_launcher.py").write_text(launcher_code)
+
     # Make scripts executable
     for s in ['Stellaris-13.command','Stellaris-13.sh','launch.sh']:
         sp = td / s
