@@ -1019,7 +1019,7 @@ footer a {
         <button class="btn-action" onclick="useChartForTransits()">↻ Use for Transits</button>
         <button class="btn-action" onclick="useChartForSynastry()">↔ Use for Synastry</button>
         <button class="btn-action" onclick="requestInterpretation()">✦ AI Interpretation</button>
-        <button class="btn-action blueprint-btn" onclick="generateBlueprint()">📜 Generate Blueprint</button>
+        <button class="btn-action blueprint-btn" onclick="generateBlueprint()" style="display: none !important;">📜 Generate Blueprint</button>
         <input type="file" id="load-file" accept=".json" style="display:none;" onchange="loadChartFile(event)">
         <button class="btn-action" onclick="document.getElementById('load-file').click()">⬆ Load Chart</button>
       </div>
@@ -1638,7 +1638,7 @@ footer a {
 
 <script>
 // ═══ STATE ═══
-let currentChart = null;
+var currentChart = null;
 let currentMethod = 'dual'; // 'standard', 'iau', 'dual'
 
 // ═══ TABS ═══
@@ -2356,7 +2356,9 @@ async function startBlueprintGeneration() {
         location_str: document.getElementById('birth-location')?.value || '',
         lat: chartData.birth_data?.lat || 0,
         lon: chartData.birth_data?.lon || 0,
-        name: chartData.name || 'Subject'
+        name: chartData.name || 'Subject',
+        providers: getSelectedProviders(),
+        providers: getSelectedProviders()
       })
     });
     
