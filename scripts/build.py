@@ -52,21 +52,21 @@ def build_tier(tier):
         if s.exists(): shutil.copy2(s, td / f)
     for f in TIERS[tier]["dummy"]:
         if not (td / f).exists():
-            (td / f).write_text(DUMMIES.get(f, ''))
+            (td / f).write_text(DUMMIES.get(f, ''), encoding='utf-8')
     # Stamp tier + version in config
     cp = td / "config.py"
     if cp.exists():
-        c = cp.read_text()
+        c = cp.read_text(encoding='utf-8')
         if "TIER =" in c: c = re.sub(r"TIER\s*=\s*['\"].*?['\"]", f"TIER = '{tier}'", c)
         else: c += f"\nTIER = '{tier}'\n"
         c = re.sub(r'APP_VERSION\s*=\s*["\'].*?["\']', f'APP_VERSION = "{VERSION}"', c)
-        cp.write_text(c)
+        cp.write_text(c, encoding='utf-8')
     # Stamp version in JS
     vjs = td / "static" / "js" / "version_notify.js"
     if vjs.exists():
-        c = vjs.read_text()
+        c = vjs.read_text(encoding='utf-8')
         c = re.sub(r"const CURRENT_VERSION = '[^']+';", f"const CURRENT_VERSION = '{VERSION}';", c)
-        vjs.write_text(c)
+        vjs.write_text(c, encoding='utf-8')
 
     # Automatically write the launcher script for PyInstaller
     launcher_code = """import sys, os, threading, webbrowser, time, signal
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     from app import app
     app.run(host='127.0.0.1', port=13013, debug=False, use_reloader=False)
 """
-    (td / "stellaris_launcher.py").write_text(launcher_code)
+    (td / "stellaris_launcher.py").write_text(launcher_code, encoding='utf-8')
 
     # Make scripts executable
     for s in ['Stellaris-13.command','Stellaris-13.sh','launch.sh']:
