@@ -27,7 +27,7 @@ jobs:
           pip install -r requirements.txt || pip install -r "stellaris-13-v2.7 (4).3/stellaris-13-v2.4/requirements.txt" || echo "Requirements not found"
       - name: Build tier distributions with compiled modules
         run: |
-          python scripts/build.py --compile
+          python scripts/build.py
       - name: Build Stellaris-${{ matrix.build_type }} Windows exe
         working-directory: builds/stellaris-${{ matrix.build_type }}
         run: |
@@ -56,7 +56,7 @@ jobs:
           pip install -r requirements.txt || pip install -r "stellaris-13-v2.7 (4).3/stellaris-13-v2.4/requirements.txt" || echo "Requirements not found"
       - name: Build tier distributions with compiled modules
         run: |
-          python scripts/build.py --compile
+          python scripts/build.py
       - name: Upload compiled zip artifacts
         uses: actions/upload-artifact@v4
         with:
