@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Stellaris-13 Build System v3 — Corrected tier structure."""
-import os, re, shutil, zipfile
+"""Stellaris-13 Build System v3 — with optional Cython compilation of sensitive modules."""
+import os, re, sys, shutil, zipfile
 from pathlib import Path
 
 _BASE = Path(__file__).resolve().parent.parent
 ROOT_DIR = _BASE if (_BASE / "app.py").exists() else _BASE / "stellaris-13-v2.7 (4).3/stellaris-13-v2.4"
 BUILD_DIR = _BASE / "builds"
 VERSION = "2.8.0"
+
+COMPILE = '--compile' in sys.argv
 
 CORE_FILES = [
     "app.py","config.py","engine.py","founder.py","license.py","launch.sh",
@@ -34,25 +36,53 @@ DUMMIES = {
     "crypto_prompts.py": 'def get_transit_prompt(*a,**k): return ""\ndef get_synastry_prompt(*a,**k): return ""\ndef get_comparison_prompt(*a,**k): return ""\ndef get_full_system_prompt(*a,**k): return ""',
 }
 
+
+def compile_sensitive_modules(tier_dir):
+    """Compile proprietary .py modules to binary (.pyd/.so), delete source."""
+    scripts_dir = Path(__file__).resolve().parent
+    compile_script = scripts_dir / "compile_secrets.py"
+    if not compile_script.exists():
+        print("    WARNING: compile_secrets.py not found, skipping compilation")
+        return
+    import subprocess
+    try:
+        subprocess.check_call([sys.executable, str(compile_script), str(tier_dir)])
+    except subprocess.CalledProcessError:
+        print("    WARNING: Compilation failed, .py source will remain")
+
+
 def build_tier(tier):
     print(f"\n  Building {tier.upper()}...")
     td = BUILD_DIR / f"stellaris-{tier}"
     if td.exists(): shutil.rmtree(td)
     os.makedirs(td)
+
+    # Copy core files and directories
     for f in CORE_FILES:
         s = ROOT_DIR / f
         if s.exists(): shutil.copy2(s, td / f)
     for d in CORE_DIRS:
         s = ROOT_DIR / d
         if s.exists(): shutil.copytree(s, td / d)
+
+    # Also copy llm_providers.py if it exists
+    for extra in ['llm_providers.py']:
+        s = ROOT_DIR / extra
+        if s.exists(): shutil.copy2(s, td / extra)
+
     os.makedirs(td / "saved_charts", exist_ok=True)
     os.makedirs(td / "generated_blueprints", exist_ok=True)
+
+    # Copy real modules for this tier
     for f in TIERS[tier]["real"]:
         s = ROOT_DIR / f
         if s.exists(): shutil.copy2(s, td / f)
+
+    # Write dummy stubs for gated modules
     for f in TIERS[tier]["dummy"]:
         if not (td / f).exists():
             (td / f).write_text(DUMMIES.get(f, ''), encoding='utf-8')
+
     # Stamp tier + version in config
     cp = td / "config.py"
     if cp.exists():
@@ -61,6 +91,7 @@ def build_tier(tier):
         else: c += f"\nTIER = '{tier}'\n"
         c = re.sub(r'APP_VERSION\s*=\s*["\'].*?["\']', f'APP_VERSION = "{VERSION}"', c)
         cp.write_text(c, encoding='utf-8')
+
     # Stamp version in JS
     vjs = td / "static" / "js" / "version_notify.js"
     if vjs.exists():
@@ -68,7 +99,7 @@ def build_tier(tier):
         c = re.sub(r"const CURRENT_VERSION = '[^']+';", f"const CURRENT_VERSION = '{VERSION}';", c)
         vjs.write_text(c, encoding='utf-8')
 
-    # Automatically write the launcher script for PyInstaller
+    # Write launcher script for PyInstaller
     launcher_code = """import sys, os, threading, webbrowser, time, signal
 if getattr(sys, 'frozen', False):
     BASE_DIR = sys._MEIPASS
@@ -99,6 +130,14 @@ if __name__ == '__main__':
     for s in ['Stellaris-13.command','Stellaris-13.sh','launch.sh']:
         sp = td / s
         if sp.exists(): os.chmod(sp, 0o755)
+
+    # --- CYTHON COMPILATION (when --compile is passed) ---
+    # Compiles proprietary modules to binary, deletes .py source.
+    # Stubs are too small to trigger compilation (< 300 bytes).
+    if COMPILE:
+        print("    Compiling proprietary modules...")
+        compile_sensitive_modules(td)
+
     # Zip
     zp = BUILD_DIR / f"stellaris-{tier}.zip"
     with zipfile.ZipFile(zp, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -110,9 +149,14 @@ if __name__ == '__main__':
     sz = os.path.getsize(zp)/1024
     print(f"    -> {zp.name} ({sz:.0f} KB)")
 
+
 if __name__ == "__main__":
     print("  Stellaris-13 Build System v3")
     print(f"  Source: {ROOT_DIR}")
+    if COMPILE:
+        print("  Mode: COMPILED (proprietary modules -> binary)")
+    else:
+        print("  Mode: SOURCE (no compilation)")
     if BUILD_DIR.exists(): shutil.rmtree(BUILD_DIR)
     os.makedirs(BUILD_DIR)
     for t in ["free","personal","professional","astrologer"]:
