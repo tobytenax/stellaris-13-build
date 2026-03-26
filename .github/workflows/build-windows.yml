@@ -34,7 +34,7 @@ jobs:
           retention-days: 30
 
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         tier: [free, personal, professional, astrologer]
