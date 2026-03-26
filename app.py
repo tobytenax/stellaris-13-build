@@ -1797,7 +1797,7 @@ def crypto_interpret():
             }), 403
     
     from crypto_prompts import get_transit_prompt, get_full_system_prompt
-    from crypto_natal import get_crypto_natal
+    from crypto_natal import get_genesis_data
     from crypto_transits import get_current_transits, analyze_crypto_transits
     
     try:
@@ -1808,7 +1808,7 @@ def crypto_interpret():
         providers = data.get('providers', {})
         
         # Build appropriate prompt with real data
-        natal = get_crypto_natal(coin)
+        natal = get_genesis_data(coin)
         if not natal:
             return jsonify({'status': 'error', 'message': f'Unknown coin: {coin}'}), 400
         
